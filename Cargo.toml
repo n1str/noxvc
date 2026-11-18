@@ -7,7 +7,7 @@ license = "AGPL-3.0-only"
 [dependencies]
 axum = { version = "0.8", features = ["ws", "multipart"] }
 tokio = { version = "1", features = ["full"] }
-tower-http = { version = "0.6", features = ["fs", "set-header"] }
+tower-http = { version = "0.7", features = ["fs", "set-header"] }
 sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "postgres", "macros", "migrate", "json"] }
 argon2 = "0.5"
 rand = "0.8"

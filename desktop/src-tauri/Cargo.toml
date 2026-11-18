@@ -41,7 +41,7 @@ windows-capture = "=2.0.1"
 # Свой захват на D3D11-устройстве с поддержкой видео и аппаратный H.264 через Media Foundation
 # (та же версия, что у windows-capture, — новых крейтов не тянет).
 windows = { version = "=0.62.2", features = ["Foundation", "Foundation_Metadata", "Graphics", "Graphics_Capture", "Graphics_DirectX", "Graphics_DirectX_Direct3D11", "Win32_Foundation", "Win32_Graphics_Direct3D", "Win32_Graphics_Direct3D11", "Win32_Graphics_Dxgi", "Win32_Graphics_Dxgi_Common", "Win32_Graphics_Gdi", "Win32_Media_MediaFoundation", "Win32_System_Com", "Win32_System_Ole", "Win32_System_Variant", "Win32_System_Diagnostics_ToolHelp", "Win32_System_Threading", "Win32_System_Registry", "Win32_System_WinRT", "Win32_System_WinRT_Direct3D11", "Win32_System_WinRT_Graphics_Capture", "Win32_Storage_Xps", "Win32_Security_Cryptography", "Win32_UI_WindowsAndMessaging", "Win32_System_SystemInformation", "Wdk_System_SystemServices"] }
-wasapi = "=0.26.0"
+wasapi = "=0.27.0"
 windows-sys = { version = "=0.61.2", features = ["Win32_Foundation", "Win32_System_LibraryLoader", "Win32_UI_WindowsAndMessaging", "Win32_UI_Input", "Win32_UI_Input_KeyboardAndMouse", "Win32_UI_Accessibility", "Win32_Graphics_Gdi"] }
 
 [profile.release]

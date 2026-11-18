@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+# Invite management on the server (runs `relay admin …` inside the relay container):
+#   ./noxvc-admin invite create [--days N] [--note TEXT] [--guild ID] [--count N] [--quiet]
+#   ./noxvc-admin invite list [--all]
+#   ./noxvc-admin invite revoke ID
+#   ./noxvc-admin requests list [--all]
+set -eu
+cd "$(dirname "$0")"
+exec docker compose exec -T relay /app/relay admin "$@"

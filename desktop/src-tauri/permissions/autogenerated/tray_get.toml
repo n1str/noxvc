@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-tray-get"
+description = "Enables the tray_get command without any pre-configured scope."
+commands.allow = ["tray_get"]
+
+[[permission]]
+identifier = "deny-tray-get"
+description = "Denies the tray_get command without any pre-configured scope."
+commands.deny = ["tray_get"]

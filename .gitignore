@@ -1,0 +1,20 @@
+target/
+/data/
+node_modules/
+screenshots/*.webm
+deploy/.env
+deploy/livekit.yaml
+deploy/run/
+tests/stack/.mon/
+deploy/edge-ca/private/
+deploy/edge-ca/public/
+
+# скриншоты, видео и замеры тестов — только локально, не в git
+screenshots/
+
+# база местоположения по IP (DB-IP Lite, необязательно)
+deploy/geoip/
+tests/demo/.seed.json
+
+# лендинг: сборка site/ (npm run build) — выкладывается на сервер отдельно
+deploy/site/

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-games-set"
+description = "Enables the games_set command without any pre-configured scope."
+commands.allow = ["games_set"]
+
+[[permission]]
+identifier = "deny-games-set"
+description = "Denies the games_set command without any pre-configured scope."
+commands.deny = ["games_set"]

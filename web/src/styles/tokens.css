@@ -1,0 +1,158 @@
+/* Дизайн-токены Relay — единственный источник цветов, отступов, радиусов, теней и движения.
+   Тёмная тема — основная; светлая добавляется переопределением этих же переменных в [data-theme="light"].
+   Акцент берётся из сервера: JS выставляет --accent-h (оттенок) на корне приложения. */
+@property --accent-h { syntax: '<number>'; inherits: true; initial-value: 262; }
+
+:root {
+  color-scheme: dark;
+  --accent-h: 262;
+
+  /* поверхности (глубина вместо жирных бордеров) */
+  --bg-app: oklch(0.155 0.008 var(--accent-h));
+  --bg-rail: oklch(0.13 0.008 var(--accent-h));
+  --bg-sidebar: oklch(0.175 0.009 var(--accent-h));
+  --bg-chat: oklch(0.195 0.008 var(--accent-h));
+  --bg-elevated: oklch(0.235 0.01 var(--accent-h));
+  --bg-overlay: oklch(0.21 0.012 var(--accent-h) / 0.82);
+  --bg-hover: oklch(1 0 0 / 0.045);
+  --bg-active: oklch(1 0 0 / 0.08);
+  --bg-input: oklch(0.14 0.008 var(--accent-h));
+  --scrim: oklch(0.08 0.01 var(--accent-h) / 0.6);
+
+  /* текст (WCAG AA на bg-chat) */
+  --text-primary: oklch(0.95 0.005 var(--accent-h));
+  --text-secondary: oklch(0.8 0.01 var(--accent-h));
+  --text-muted: oklch(0.66 0.012 var(--accent-h));
+  --text-link: oklch(0.78 0.11 calc(var(--accent-h) - 20));
+  --text-danger: oklch(0.72 0.17 25);
+
+  /* акцент и статусы */
+  --accent: oklch(0.66 0.17 var(--accent-h));
+  /* заливки под белым текстом (кнопки, выбранный сегмент): ≥ 5:1 при любом оттенке акцента (проверено по кругу 0–360°) */
+  --accent-strong: oklch(0.48 0.17 var(--accent-h));
+  --accent-soft: oklch(0.66 0.17 var(--accent-h) / 0.16);
+  --accent-text: oklch(0.98 0.01 var(--accent-h));
+  --success: oklch(0.72 0.15 155);
+  --warning: oklch(0.8 0.14 80);
+  /* заливка под белым текстом (кнопка удаления, бейджи) — AA; как цвет текста — --text-danger */
+  --danger: oklch(0.56 0.2 25);
+  --online: oklch(0.72 0.17 150);
+  --idle: oklch(0.8 0.15 80);
+  --dnd: oklch(0.63 0.21 25);
+  --offline: oklch(0.55 0.01 var(--accent-h));
+  --mention-bg: oklch(0.8 0.14 80 / 0.1);
+  --mention-bar: oklch(0.8 0.14 80);
+  /* текст на «предупреждающей» заливке; корона владельца */
+  --on-warning: oklch(0.15 0 0);
+  --crown: oklch(0.8 0.15 80);
+
+  /* фон звонка/трансляций и «утопленные» области (миниатюры), фоновое свечение приложения */
+  --bg-call: oklch(0.13 0.008 var(--accent-h));
+  --bg-sunken: oklch(0.1 0.01 var(--accent-h));
+  --ambient-1: oklch(0.45 0.09 var(--accent-h) / 0.18);
+  --ambient-2: oklch(0.5 0.08 calc(var(--accent-h) + 40) / 0.1);
+
+  /* цвета ролей: светлота ника ограничивается под фон (контраст AA), оттенок роли сохраняется */
+  --role-l-min: 0.7; --role-l-max: 1;
+
+  /* подсветка кода */
+  --code-keyword: oklch(0.72 0.15 300); --code-string: oklch(0.74 0.14 145); --code-number: oklch(0.78 0.14 60);
+  --code-title: oklch(0.76 0.12 240); --code-type: oklch(0.78 0.12 190); --code-attr: oklch(0.8 0.1 30);
+  --code-meta: oklch(0.7 0.1 210); --code-deletion: oklch(0.68 0.18 25);
+
+  /* линии */
+  --line: oklch(1 0 0 / 0.07);
+  --line-strong: oklch(1 0 0 / 0.12);
+  --edge-glow: inset 0 1px 0 oklch(1 0 0 / 0.06);
+
+  /* отступы — сетка 4px */
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px; --s-6: 24px; --s-8: 32px; --s-10: 40px; --s-12: 48px;
+
+  /* радиусы */
+  --r-sm: 6px; --r-md: 10px; --r-lg: 16px; --r-full: 999px;
+
+  /* тени (3 уровня) */
+  --shadow-1: 0 1px 2px oklch(0 0 0 / 0.3);
+  --shadow-2: 0 6px 20px oklch(0 0 0 / 0.35), 0 1px 3px oklch(0 0 0 / 0.3);
+  --shadow-3: 0 18px 48px oklch(0 0 0 / 0.45), 0 4px 12px oklch(0 0 0 / 0.3);
+
+  /* типографика */
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', Consolas, monospace;
+  --fs-12: 12px; --fs-13: 13px; --fs-14: 14px; --fs-15: 15px; --fs-16: 16px; --fs-20: 20px; --fs-24: 24px; --fs-32: 32px;
+  --lh-message: 1.45;
+
+  /* движение */
+  --dur-fast: 120ms; --dur: 180ms; --dur-slow: 250ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* раскладка */
+  --rail-w: 72px; --sidebar-w: 248px; --members-w: 248px; --header-h: 52px;
+}
+
+/* Светлая тема: те же переменные, другие значения. Включается атрибутом data-theme="light" на <html>
+   (выбор «светлая» или «как в системе» при светлой системе; ставится до первой отрисовки — см. index.html). */
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --bg-app: oklch(0.955 0.005 var(--accent-h));
+  --bg-rail: oklch(0.915 0.008 var(--accent-h));
+  --bg-sidebar: oklch(0.952 0.006 var(--accent-h));
+  --bg-chat: oklch(0.993 0.002 var(--accent-h));
+  --bg-elevated: oklch(1 0 0);
+  --bg-overlay: oklch(0.995 0.003 var(--accent-h) / 0.92);
+  --bg-hover: oklch(0.2 0.02 var(--accent-h) / 0.055);
+  --bg-active: oklch(0.2 0.02 var(--accent-h) / 0.1);
+  --bg-input: oklch(0.935 0.006 var(--accent-h));
+  --scrim: oklch(0.2 0.02 var(--accent-h) / 0.42);
+
+  /* текст (WCAG AA на bg-chat и bg-sidebar — проверяет e2e-theme) */
+  --text-primary: oklch(0.22 0.012 var(--accent-h));
+  --text-secondary: oklch(0.38 0.014 var(--accent-h));
+  --text-muted: oklch(0.47 0.014 var(--accent-h));
+  --text-link: oklch(0.43 0.16 calc(var(--accent-h) - 20));
+  --text-danger: oklch(0.5 0.19 25);
+
+  /* акцент и статусы — темнее: и как текст на светлом, и как заливка под белым текстом */
+  --accent: oklch(0.48 0.19 var(--accent-h));
+  --accent-strong: oklch(0.47 0.2 var(--accent-h));
+  --accent-soft: oklch(0.48 0.19 var(--accent-h) / 0.12);
+  --accent-text: oklch(0.99 0.005 var(--accent-h));
+  --success: oklch(0.5 0.14 155);
+  --warning: oklch(0.52 0.13 70);
+  --danger: oklch(0.52 0.2 25);
+  --online: oklch(0.52 0.15 150);
+  --idle: oklch(0.6 0.15 75);
+  --dnd: oklch(0.52 0.2 25);
+  --offline: oklch(0.6 0.01 var(--accent-h));
+  --mention-bg: oklch(0.8 0.14 80 / 0.2);
+  --mention-bar: oklch(0.68 0.15 75);
+  --on-warning: oklch(0.99 0 0);
+  --crown: oklch(0.62 0.15 70);
+
+  --line: oklch(0.2 0.02 var(--accent-h) / 0.09);
+  --line-strong: oklch(0.2 0.02 var(--accent-h) / 0.16);
+  --edge-glow: inset 0 1px 0 oklch(1 0 0 / 0.7);
+
+  --shadow-1: 0 1px 2px oklch(0.2 0.02 var(--accent-h) / 0.1);
+  --shadow-2: 0 6px 20px oklch(0.2 0.02 var(--accent-h) / 0.12), 0 1px 3px oklch(0.2 0.02 var(--accent-h) / 0.1);
+  --shadow-3: 0 18px 48px oklch(0.2 0.02 var(--accent-h) / 0.18), 0 4px 12px oklch(0.2 0.02 var(--accent-h) / 0.1);
+
+  --bg-call: oklch(0.9 0.008 var(--accent-h));
+  --bg-sunken: oklch(0.88 0.008 var(--accent-h));
+  --ambient-1: oklch(0.8 0.08 var(--accent-h) / 0.25);
+  --ambient-2: oklch(0.85 0.06 calc(var(--accent-h) + 40) / 0.2);
+
+  --role-l-min: 0; --role-l-max: 0.5;
+
+  /* подсветка кода — светлая схема (тёмные насыщенные цвета на светлом фоне, AA) */
+  --code-keyword: oklch(0.48 0.2 300); --code-string: oklch(0.47 0.14 145); --code-number: oklch(0.5 0.15 55);
+  --code-title: oklch(0.47 0.16 255); --code-type: oklch(0.47 0.11 200); --code-attr: oklch(0.5 0.15 30);
+  --code-meta: oklch(0.47 0.1 220); --code-deletion: oklch(0.5 0.2 25);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-fast: 0ms; --dur: 0ms; --dur-slow: 0ms; }
+}
+:root[data-reduced-motion='true'] { --dur-fast: 0ms; --dur: 0ms; --dur-slow: 0ms; }

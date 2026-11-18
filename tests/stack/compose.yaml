@@ -1,0 +1,54 @@
+# Локальный стенд для тестов API и e2e: NoxVC (образ из репо) + Postgres по сокету + Garage (S3). Без LiveKit
+# (голос — подписанными вебхуками в тестах). Регистрация — по кодам через CLI (tests/register-codes.mjs).
+#   docker compose -f tests/stack/compose.yaml up -d --build
+#   RELAY_URL=http://127.0.0.1:18099 node --import=./tests/register-codes.mjs tests/invites.mjs
+#   docker compose -f tests/stack/compose.yaml down -v
+name: relay-test
+services:
+  relay:
+    build: ../..
+    depends_on:
+      postgres: { condition: service_healthy }
+      garage: { condition: service_started }
+    environment:
+      # БД по Unix-сокету (как с системным PostgreSQL на сервере); «localhost» — заглушка, сокет — в host=
+      DATABASE_URL: postgres://relay:relay@localhost/relay?host=/var/run/postgresql
+      RELAY_METRICS_ADDR: 0.0.0.0:9464
+      # закрытая регистрация: тесты получают коды через CLI (tests/register-codes.mjs); ограничения частоты — для стенда
+      RELAY_INSTANCE_ADMINS: tadmin
+      RELAY_REGISTER_PER_IP: "100000"
+      RELAY_REGISTER_GLOBAL: "100000"
+      RELAY_LOGIN_FAILS_PER_IP: "100000"
+      RELAY_BAD_CODES_PER_IP: "100000"
+      RELAY_PRESENCE_GRACE_MS: "1000" # тесты присутствия ждут «не в сети» ~1 с
+      RELAY_STORAGE: s3
+      RELAY_S3_ENDPOINT: http://garage:3900
+      RELAY_S3_BUCKET: relay
+      RELAY_S3_ACCESS_KEY: GK0123456789abcdef0123456789abcdef
+      RELAY_S3_SECRET_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      RELAY_STORAGE_FALLBACK_DIR: /data/uploads
+    volumes:
+      - pg-socket:/var/run/postgresql
+    ports: ["127.0.0.1:18099:8080", "127.0.0.1:19464:9464"]
+
+  postgres:
+    image: postgres:16-alpine
+    command: ["postgres", "-c", "shared_preload_libraries=pg_stat_statements", "-c", "track_io_timing=on"]
+    environment: { POSTGRES_USER: relay, POSTGRES_DB: relay, POSTGRES_PASSWORD: relay }
+    volumes: [pg-socket:/var/run/postgresql]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U relay -d relay"], interval: 2s, retries: 30 }
+
+  garage:
+    image: dxflrs/garage:v2.5.0
+    command: ["/garage", "server", "--single-node", "--default-bucket"]
+    environment:
+      GARAGE_RPC_SECRET: "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90"
+      GARAGE_ADMIN_TOKEN: test-admin-token
+      GARAGE_DEFAULT_ACCESS_KEY: GK0123456789abcdef0123456789abcdef
+      GARAGE_DEFAULT_SECRET_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      GARAGE_DEFAULT_BUCKET: relay
+    volumes: [../../deploy/garage.toml:/etc/garage.toml:ro]
+    ports: ["127.0.0.1:13903:3903"]
+
+volumes:
+  pg-socket: {}

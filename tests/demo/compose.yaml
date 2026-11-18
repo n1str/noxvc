@@ -1,0 +1,59 @@
+# Демо-стенд NoxVC — для скриншотов лендинга. Отдельный от прода и от тестового стенда (свои БД, хранилище, порты):
+# Relay (образ из репо) + Postgres + Garage + LiveKit (той же версии, что на сервере; медиа — на 127.0.0.1).
+# Данные — только выдуманные (tests/demo/seed.mjs): ники, серверы, сообщения, аватары-градиенты.
+#   docker compose -f tests/demo/compose.yaml up -d --build
+#   node tests/demo/seed.mjs && node tests/demo/shots.mjs
+#   docker compose -f tests/demo/compose.yaml down -v      — снести вместе с данными
+name: noxvc-demo
+services:
+  relay:
+    build: ../..
+    depends_on:
+      postgres: { condition: service_healthy }
+      garage: { condition: service_started }
+    environment:
+      DATABASE_URL: postgres://relay:relay@localhost/relay?host=/var/run/postgresql
+      LIVEKIT_URL: http://livekit:7880
+      LIVEKIT_PUBLIC_URL: ws://127.0.0.1:18280
+      LIVEKIT_API_KEY: demokey
+      LIVEKIT_API_SECRET: demo-secret-demo-secret-demo-secret-0123
+      RELAY_REGISTER_PER_IP: "1000"
+      RELAY_STORAGE: s3
+      RELAY_S3_ENDPOINT: http://garage:3900
+      RELAY_S3_BUCKET: relay
+      RELAY_S3_ACCESS_KEY: GK0123456789abcdef0123456789abcdef
+      RELAY_S3_SECRET_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      RELAY_STORAGE_FALLBACK_DIR: /data/uploads
+    volumes:
+      - pg-socket:/var/run/postgresql
+    ports: ["127.0.0.1:18299:8080"]
+
+  postgres:
+    image: postgres:16-alpine
+    environment: { POSTGRES_USER: relay, POSTGRES_DB: relay, POSTGRES_PASSWORD: relay }
+    volumes: [pg-socket:/var/run/postgresql]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U relay -d relay"], interval: 2s, retries: 30 }
+
+  garage:
+    image: dxflrs/garage:v2.5.0
+    command: ["/garage", "server", "--single-node", "--default-bucket"]
+    environment:
+      GARAGE_RPC_SECRET: "b1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90"
+      GARAGE_ADMIN_TOKEN: demo-admin-token
+      GARAGE_DEFAULT_ACCESS_KEY: GK0123456789abcdef0123456789abcdef
+      GARAGE_DEFAULT_SECRET_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      GARAGE_DEFAULT_BUCKET: relay
+    volumes: [../../deploy/garage.toml:/etc/garage.toml:ro]
+
+  livekit:
+    image: livekit/livekit-server:v1.13.10
+    command: ["--config", "/etc/livekit.yaml"]
+    volumes: [./livekit.yaml:/etc/livekit.yaml:ro]
+    ports:
+      - "127.0.0.1:18280:7880"
+      # медиа — те же номера портов: их LiveKit сообщает браузеру в ICE-кандидатах
+      - "127.0.0.1:7881:7881/tcp"
+      - "127.0.0.1:7882:7882/udp"
+
+volumes:
+  pg-socket: {}

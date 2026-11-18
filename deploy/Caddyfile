@@ -1,0 +1,42 @@
+# Caddy for NoxVC (https profile in compose.yaml): Let's Encrypt certificates are obtained and renewed automatically.
+#   APP_DOMAIN   — web client, /api, /gateway (WebSocket), files, desktop updates
+#   VOICE_DOMAIN — LiveKit signalling (wss://VOICE_DOMAIN/rtc); media goes directly to UDP 7882 / TCP 7881
+{
+	# no HTTP/3: UDP 443 is usually not forwarded
+	servers {
+		protocols h1 h2
+	}
+}
+
+(site_headers) {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Frame-Options "SAMEORIGIN"
+		-Server
+	}
+}
+
+{$APP_DOMAIN} {
+	import site_headers
+	# invite-only service: keep it out of search engines
+	header X-Robots-Tag "noindex, nofollow"
+	handle /robots.txt {
+		respond "User-agent: *
+Disallow: /
+" 200
+	}
+	handle {
+		reverse_proxy relay:8080 {
+			# the region header is internal — never accept it from clients
+			header_up -X-Relay-Region
+		}
+	}
+}
+
+{$VOICE_DOMAIN} {
+	import site_headers
+	reverse_proxy livekit:7880
+}

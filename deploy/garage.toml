@@ -1,0 +1,22 @@
+# Garage (S3) для файлов Relay: один узел без репликации. Секреты (rpc_secret, admin_token, ключ доступа)
+# не здесь — в .env, передаются переменными окружения (см. compose.yaml).
+metadata_dir = "/var/lib/garage/meta"
+data_dir = "/var/lib/garage/data"
+db_engine = "sqlite"
+replication_factor = 1
+# снимок метаданных (для восстановления и бэкапа) — каждые 6 часов, в meta/snapshots
+metadata_auto_snapshot_interval = "6h"
+# сжатие блоков zstd: картинки/видео почти не сжимаются, но текстовые вложения — да
+compression_level = 1
+
+rpc_bind_addr = "[::]:3901"
+rpc_public_addr = "127.0.0.1:3901"
+
+[s3_api]
+s3_region = "garage"
+api_bind_addr = "[::]:3900"
+root_domain = ".s3.garage.localhost"
+
+[admin]
+api_bind_addr = "[::]:3903"
+# /metrics без токена: порт 3903 опубликован только на 127.0.0.1 хоста (Prometheus на том же хосте)

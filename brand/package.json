@@ -1,0 +1,10 @@
+{
+  "name": "noxvc-brand",
+  "private": true,
+  "type": "module",
+  "description": "Исходники бренда NoxVC и генератор иконок: node gen.mjs",
+  "devDependencies": {
+    "opentype.js": "1.3.4"
+  },
+  "license": "AGPL-3.0-only"
+}

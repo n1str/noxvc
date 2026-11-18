@@ -1,0 +1,92 @@
+# NoxVC alert rules (loaded by deploy/monitoring/prometheus/prometheus.yml). Route them with Alertmanager if needed.
+groups:
+  - name: relay
+    rules:
+      - alert: RelayBackendDown
+        expr: up{job="relay-backend"} == 0
+        for: 2m
+        labels: { severity: critical }
+        annotations: { summary: "Relay не отвечает на /metrics больше 2 минут" }
+      - alert: NodeDown
+        expr: up{job="node"} == 0
+        for: 2m
+        labels: { severity: critical }
+        annotations: { summary: "node_exporter не отвечает" }
+      - alert: DiskFull
+        expr: (1 - node_filesystem_avail_bytes{job="node",fstype=~"ext4|xfs|btrfs"} / node_filesystem_size_bytes{job="node",fstype=~"ext4|xfs|btrfs"}) > 0.90
+        for: 5m
+        labels: { severity: warning }
+        annotations: { summary: "Диск {{ $labels.mountpoint }} заполнен больше чем на 90%" }
+      - alert: MemoryHigh
+        expr: (1 - node_memory_MemAvailable_bytes{job="node"} / node_memory_MemTotal_bytes{job="node"}) > 0.90
+        for: 10m
+        labels: { severity: warning }
+        annotations: { summary: "Занято больше 90% памяти 10 минут" }
+      - alert: RelayHttp5xx
+        expr: |
+          sum(rate(relay_http_requests_total{status=~"5.."}[5m])) / sum(rate(relay_http_requests_total[5m])) > 0.05
+          and sum(rate(relay_http_requests_total[5m])) > 0.1
+        for: 5m
+        labels: { severity: warning }
+        annotations: { summary: "Доля ответов 5xx больше 5% (5 минут)" }
+      - alert: RelayMediaQueueGrowing
+        expr: deriv(relay_media_queue_length[15m]) > 0 and relay_media_queue_length > 5
+        for: 15m
+        labels: { severity: warning }
+        annotations: { summary: "Очередь обработки медиа растёт 15 минут" }
+
+  - name: relay-postgres
+    rules:
+      - alert: PostgresDown
+        expr: pg_up{job="postgres"} == 0 or up{job="postgres"} == 0
+        for: 1m
+        labels: { severity: critical }
+        annotations: { summary: "PostgreSQL недоступен" }
+      - alert: PostgresConnectionsHigh
+        expr: sum(pg_stat_activity_count{job="postgres"}) / max(pg_settings_max_connections{job="postgres"}) > 0.80
+        for: 5m
+        labels: { severity: warning }
+        annotations: { summary: "Подключений к PostgreSQL больше 80% max_connections" }
+      - alert: PostgresLongTransaction
+        expr: max(relay_pg_oldest_xact_seconds{job="postgres"}) > 600 or max(relay_pg_idle_in_xact_max_seconds{job="postgres"}) > 600
+        for: 1m
+        labels: { severity: warning }
+        annotations: { summary: "Транзакция или idle in transaction дольше 10 минут" }
+      - alert: PostgresDeadlocks
+        expr: sum(increase(pg_stat_database_deadlocks{job="postgres",datname="relay"}[5m])) > 0
+        labels: { severity: warning }
+        annotations: { summary: "Дедлоки в PostgreSQL за 5 минут" }
+      - alert: PostgresCacheHitLow
+        expr: |
+          sum(rate(pg_stat_database_blks_hit{job="postgres",datname="relay"}[15m]))
+            / (sum(rate(pg_stat_database_blks_hit{job="postgres",datname="relay"}[15m])) + sum(rate(pg_stat_database_blks_read{job="postgres",datname="relay"}[15m]))) < 0.95
+          and sum(rate(pg_stat_database_blks_read{job="postgres",datname="relay"}[15m])) > 1
+        for: 15m
+        labels: { severity: warning }
+        annotations: { summary: "Cache hit ratio PostgreSQL ниже 95% (15 минут)" }
+      - alert: PostgresXidAge
+        expr: max(relay_pg_xid_age{job="postgres"}) > 1e9
+        labels: { severity: critical }
+        annotations: { summary: "Возраст XID больше 1 млрд — нужен VACUUM FREEZE" }
+      - alert: RelayDbPoolWaitHigh
+        expr: histogram_quantile(0.95, sum by (le) (rate(relay_db_pool_acquire_duration_seconds_bucket[5m]))) > 0.1
+        for: 5m
+        labels: { severity: warning }
+        annotations: { summary: "Ожидание соединения из пула БД p95 > 100 мс" }
+  - name: relay-voice
+    rules:
+      - alert: VoiceConnectFailures
+        expr: |
+          sum by (region) (increase(relay_region_voice_client_events_total{event="failed"}[15m]))
+            / clamp_min(sum by (region) (increase(relay_region_voice_client_events_total{event=~"connected|failed"}[15m])), 1) > 0.2
+          and sum by (region) (increase(relay_region_voice_client_events_total{event="failed"}[15m])) >= 3
+        for: 5m
+        labels: { severity: warning }
+        annotations: { summary: "Больше 20% подключений к голосу через {{ $labels.region }} не удаются (15 минут)" }
+      - alert: VoiceMediaLossHigh
+        expr: |
+          histogram_quantile(0.5, sum by (region, le) (rate(relay_region_voice_loss_ratio_bucket[15m]))) > 0.05
+          and sum by (region) (rate(relay_region_voice_loss_ratio_count[15m])) > 0
+        for: 10m
+        labels: { severity: warning }
+        annotations: { summary: "Медианные потери голоса у клиентов через {{ $labels.region }} больше 5%" }

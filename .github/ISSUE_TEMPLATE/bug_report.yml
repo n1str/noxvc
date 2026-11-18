@@ -1,0 +1,11 @@
+name: Bug report
+description: Something does not work
+labels: [bug]
+body:
+  - type: textarea
+    attributes: { label: What happened, description: Steps to reproduce, expected and actual result }
+    validations: { required: true }
+  - type: input
+    attributes: { label: Version, description: Server / desktop app version, browser }
+  - type: textarea
+    attributes: { label: Logs, description: Relevant output of `docker compose logs relay` (remove secrets), render: text }

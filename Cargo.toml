@@ -16,7 +16,7 @@ serde_json = "1"
 futures-util = "0.3"
 hmac = "0.12"
 sha2 = "0.10"
-base64 = "0.22"
+base64 = "0.23"
 # HMAC-SHA1 для краткоживущих учётных данных TURN (coturn use-auth-secret); та же версия уже в дереве (axum ws)
 sha1 = "=0.10.7"
 maxminddb = "=0.32.0" # местоположение сеанса по IP (база DB-IP Lite, CC BY 4.0)

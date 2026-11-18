@@ -1,0 +1,12 @@
+# Дашборды Relay — из файлов (/var/lib/grafana/dashboards/relay), папка «Relay» в Grafana.
+apiVersion: 1
+providers:
+  - name: relay
+    folder: NoxVC
+    folderUid: relay
+    type: file
+    disableDeletion: true
+    allowUiUpdates: false
+    updateIntervalSeconds: 60
+    options:
+      path: /var/lib/grafana/dashboards/noxvc

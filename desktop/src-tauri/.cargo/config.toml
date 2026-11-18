@@ -1,0 +1,4 @@
+# libwebrtc (нативная демонстрация экрана) собран со статической CRT (/MT) — так же собираем и приложение,
+# иначе линковщик ругается на смешение /MT и /MD. Заодно .exe не требует установленного VC++ Redistributable.
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]

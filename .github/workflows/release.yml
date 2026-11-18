@@ -1,0 +1,52 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    name: Windows installer
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - name: Version from the tag
+        shell: bash
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          node -e "const fs=require('fs');const f='desktop/src-tauri/tauri.conf.json';const c=JSON.parse(fs.readFileSync(f));c.version=process.argv[1];fs.writeFileSync(f,JSON.stringify(c,null,2)+'\n')" "$v"
+          sed -i "0,/^version = \".*\"/s//version = \"$v\"/" desktop/src-tauri/Cargo.toml
+      # No RELAY_SERVER: the app asks for the server address on first start. No RELAY_UPDATE_KEY: no auto-update.
+      - name: Build
+        working-directory: desktop
+        run: |
+          npm ci
+          npm run build
+      - name: Checksums and release notes
+        shell: bash
+        run: |
+          cd desktop/src-tauri/target/release/bundle/nsis
+          f=$(ls *-setup.exe)
+          sha256sum "$f" > "$f.sha256"
+          cd "$GITHUB_WORKSPACE"
+          v="${GITHUB_REF_NAME#v}"
+          awk -v v="$v" '$0 ~ "^## \[?"v"\]?" {on=1; next} on && /^## / {exit} on' CHANGELOG.md > notes.md
+          { echo; echo "**SHA-256:** \`$(cut -d' ' -f1 desktop/src-tauri/target/release/bundle/nsis/*.sha256)\`"; } >> notes.md
+      - uses: softprops/action-gh-release@v2
+        with:
+          body_path: notes.md
+          files: |
+            desktop/src-tauri/target/release/bundle/nsis/*-setup.exe
+            desktop/src-tauri/target/release/bundle/nsis/*-setup.exe.sha256

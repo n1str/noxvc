@@ -1,0 +1,43 @@
+fn main() {
+    // Команды приложения доступны только через явные разрешения (capabilities):
+    // локальной странице подключения и странице сервера — каждая свой набор.
+    tauri_build::try_build(tauri_build::Attributes::new().app_manifest(tauri_build::AppManifest::new().commands(&[
+        "connect",
+        "server_get",
+        "server_set",
+        "notify",
+        "attention",
+        "set_unread",
+        "ptt_set_key",
+        "hotkeys_set",
+        "set_theme",
+        "app_info",
+        "autostart_get",
+        "autostart_set",
+        "tray_get",
+        "tray_set",
+        "screen_sources",
+        "screen_start",
+        "screen_stop",
+        "screen_update",
+        "screen_audio",
+        "update_status",
+        "update_check",
+        "update_install",
+        "snap_layout",
+        "window_active",
+        "games_set_catalog",
+        "games_get",
+        "games_set",
+        "games_running",
+        "games_add_custom",
+        "games_remove_custom",
+        "games_dota_gsi",
+        "session_get",
+        "session_put",
+        "endpoint_failover",
+        "endpoints",
+        "endpoint_prefer",
+    ])))
+    .expect("tauri build");
+}

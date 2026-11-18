@@ -1,0 +1,17 @@
+# LiveKit демо-стенда: ключи — только для локального стенда; медиа на 127.0.0.1 (браузер на этом же ПК).
+port: 7880
+log_level: warn
+rtc:
+  tcp_port: 7881
+  udp_port: 7882
+  use_external_ip: false
+  node_ip: 127.0.0.1
+keys:
+  demokey: demo-secret-demo-secret-demo-secret-0123
+webhook:
+  api_key: demokey
+  urls:
+    - http://relay:8080/api/livekit/webhook
+room:
+  empty_timeout: 30
+  departure_timeout: 10

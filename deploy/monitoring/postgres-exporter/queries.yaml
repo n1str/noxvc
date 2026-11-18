@@ -1,0 +1,90 @@
+# Свои запросы postgres_exporter (--extend.query-path). Имя метрики = <ключ>_<столбец>.
+# Кардинальность ограничена: топ-15 таблиц/индексов, топ-10 запросов; без id и без полного текста SQL.
+
+# Самая старая транзакция и самый долгий «idle in transaction» (секунды; 0 — нет таких).
+relay_pg:
+  query: |
+    SELECT
+      GREATEST(COALESCE(EXTRACT(EPOCH FROM max(now() - xact_start) FILTER (WHERE xact_start IS NOT NULL AND backend_type = 'client backend')), 0), 0)::float8 AS oldest_xact_seconds,
+      GREATEST(COALESCE(EXTRACT(EPOCH FROM max(now() - state_change) FILTER (WHERE state IN ('idle in transaction', 'idle in transaction (aborted)'))), 0), 0)::float8 AS idle_in_xact_max_seconds
+    FROM pg_stat_activity WHERE pid <> pg_backend_pid()
+  metrics:
+    - oldest_xact_seconds: { usage: GAUGE, description: "Возраст самой старой транзакции, с" }
+    - idle_in_xact_max_seconds: { usage: GAUGE, description: "Самый долгий idle in transaction, с" }
+
+# XID wraparound: age(datfrozenxid) по базам.
+relay_pg_xid:
+  query: "SELECT datname, age(datfrozenxid)::float8 AS age FROM pg_database WHERE datallowconn"
+  metrics:
+    - datname: { usage: LABEL, description: "База" }
+    - age: { usage: GAUGE, description: "age(datfrozenxid)" }
+
+# Размер баз.
+relay_pg_db:
+  query: "SELECT datname, pg_database_size(datname)::float8 AS size_bytes FROM pg_database WHERE datallowconn AND NOT datistemplate"
+  metrics:
+    - datname: { usage: LABEL, description: "База" }
+    - size_bytes: { usage: GAUGE, description: "Размер базы, байт" }
+
+# Топ-15 таблиц и индексов по размеру.
+relay_pg_relation:
+  query: |
+    SELECT c.relname, CASE c.relkind WHEN 'i' THEN 'index' ELSE 'table' END AS kind, pg_total_relation_size(c.oid)::float8 AS total_bytes
+    FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname = 'public' AND c.relkind IN ('r', 'i', 'p')
+    ORDER BY pg_total_relation_size(c.oid) DESC LIMIT 15
+  metrics:
+    - relname: { usage: LABEL, description: "Таблица или индекс" }
+    - kind: { usage: LABEL, description: "table или index" }
+    - total_bytes: { usage: GAUGE, description: "Размер (с TOAST и индексами для таблиц), байт" }
+
+# Мёртвые строки и время с последнего autovacuum/autoanalyze — топ-15 таблиц Relay по размеру
+# (messages, reactions, read_states, attachments, …). -1 — ещё не было.
+relay_pg_table:
+  query: |
+    SELECT relname, n_live_tup::float8 AS live_tuples, n_dead_tup::float8 AS dead_tuples,
+      COALESCE(EXTRACT(EPOCH FROM now() - GREATEST(last_autovacuum, last_vacuum)), -1)::float8 AS seconds_since_vacuum,
+      COALESCE(EXTRACT(EPOCH FROM now() - GREATEST(last_autoanalyze, last_analyze)), -1)::float8 AS seconds_since_analyze
+    FROM pg_stat_user_tables
+    ORDER BY pg_total_relation_size(relid) DESC LIMIT 15
+  metrics:
+    - relname: { usage: LABEL, description: "Таблица" }
+    - live_tuples: { usage: GAUGE, description: "Живые строки" }
+    - dead_tuples: { usage: GAUGE, description: "Мёртвые строки" }
+    - seconds_since_vacuum: { usage: GAUGE, description: "Секунд с последнего (auto)vacuum, -1 — не было" }
+    - seconds_since_analyze: { usage: GAUGE, description: "Секунд с последнего (auto)analyze, -1 — не было" }
+
+# pg_stat_statements: топ-10 запросов приложения (роль relay) по суммарному времени (queryid + первые 80 символов текста).
+relay_pg_stmt_total:
+  query: |
+    SELECT queryid::text AS queryid, left(regexp_replace(query, '\s+', ' ', 'g'), 80) AS query,
+      calls::float8 AS calls, (total_exec_time / 1000)::float8 AS seconds, (mean_exec_time / 1000)::float8 AS mean_seconds
+    FROM pg_stat_statements s JOIN pg_database d ON d.oid = s.dbid
+    WHERE d.datname = 'relay' AND s.userid = (SELECT oid FROM pg_roles WHERE rolname = 'relay') ORDER BY total_exec_time DESC LIMIT 10
+  metrics:
+    - queryid: { usage: LABEL, description: "queryid" }
+    - query: { usage: LABEL, description: "Начало текста запроса" }
+    - calls: { usage: GAUGE, description: "Вызовов (с последнего сброса статистики)" }
+    - seconds: { usage: GAUGE, description: "Суммарное время, с" }
+    - mean_seconds: { usage: GAUGE, description: "Среднее время, с" }
+
+# pg_stat_statements: топ-10 по среднему времени (запросы, вызванные хотя бы 5 раз).
+relay_pg_stmt_mean:
+  query: |
+    SELECT queryid::text AS queryid, left(regexp_replace(query, '\s+', ' ', 'g'), 80) AS query,
+      calls::float8 AS calls, (mean_exec_time / 1000)::float8 AS mean_seconds
+    FROM pg_stat_statements s JOIN pg_database d ON d.oid = s.dbid
+    WHERE d.datname = 'relay' AND s.userid = (SELECT oid FROM pg_roles WHERE rolname = 'relay') AND calls >= 5 ORDER BY mean_exec_time DESC LIMIT 10
+  metrics:
+    - queryid: { usage: LABEL, description: "queryid" }
+    - query: { usage: LABEL, description: "Начало текста запроса" }
+    - calls: { usage: GAUGE, description: "Вызовов" }
+    - mean_seconds: { usage: GAUGE, description: "Среднее время, с" }
+
+# WAL: сколько байт записано (счётчик с последнего сброса pg_stat_wal) — для «генерация WAL, байт/с» через rate().
+# pg_wal_size_bytes экспортера — размер каталога WAL (gauge, падает после чекпоинтов), rate() к нему неприменим.
+relay_pg_wal:
+  query: "SELECT wal_bytes::float8 AS bytes_total, wal_records::float8 AS records_total FROM pg_stat_wal"
+  metrics:
+    - bytes_total: { usage: COUNTER, description: "Записано в WAL, байт" }
+    - records_total: { usage: COUNTER, description: "Записей WAL" }

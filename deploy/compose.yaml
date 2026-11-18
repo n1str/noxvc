@@ -1,0 +1,177 @@
+# NoxVC: server (Rust), PostgreSQL, Garage (S3 file storage), LiveKit (voice, video, screen sharing, TURN).
+#
+#   Local:       cp .env.example .env && docker compose up -d        -> http://localhost:8080
+#   Domain:      ./gen-env.sh > .env, set APP_DOMAIN/VOICE_DOMAIN/PUBLIC_IP/APP_URL/LIVEKIT_PUBLIC_URL,
+#                docker compose --profile https up -d               -> https://<APP_DOMAIN>
+#   Monitoring:  docker compose --profile monitoring up -d          -> Grafana http://localhost:3000
+#
+# All settings live in .env (see .env.example and docs/configuration.md).
+name: noxvc
+
+x-noxvc-env: &noxvc-env
+  DATABASE_URL: postgres://noxvc:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/noxvc
+  RELAY_ADDR: 0.0.0.0:8080
+  RELAY_METRICS_ADDR: 0.0.0.0:9464
+  RELAY_APP_URL: ${APP_URL:-http://localhost:8080}
+  RELAY_SITE_URL: ${SITE_URL:-}
+  LIVEKIT_URL: http://livekit:7880
+  LIVEKIT_PUBLIC_URL: ${LIVEKIT_PUBLIC_URL:-ws://localhost:7880}
+  LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:?set LIVEKIT_API_KEY in .env}
+  LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:?set LIVEKIT_API_SECRET in .env}
+  RELAY_STORAGE: s3
+  RELAY_S3_ENDPOINT: http://garage:3900
+  RELAY_S3_REGION: garage
+  RELAY_S3_BUCKET: noxvc
+  RELAY_S3_ACCESS_KEY: ${GARAGE_ACCESS_KEY:?set GARAGE_ACCESS_KEY in .env}
+  RELAY_S3_SECRET_KEY: ${GARAGE_SECRET_KEY:?set GARAGE_SECRET_KEY in .env}
+  RELAY_INSTANCE_ADMINS: ${INSTANCE_ADMINS:-}
+  RELAY_INVITE_KEY: ${INVITE_KEY:?set INVITE_KEY in .env}
+  RELAY_GEOIP_DB: ${GEOIP_DB:-}
+
+services:
+  relay:
+    build: ..
+    image: noxvc:latest
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+      garage: { condition: service_started }
+    environment: *noxvc-env
+    volumes:
+      - noxvc-data:/data
+    ports:
+      # App HTTP. Local: for the browser; with the https profile clients go through Caddy.
+      - "${HTTP_BIND:-127.0.0.1:8080}:8080"
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: noxvc
+      POSTGRES_DB: noxvc
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U noxvc -d noxvc"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  # S3 file storage: attachments, avatars, banners, emoji. Single node; key and bucket are created on first start.
+  garage:
+    image: dxflrs/garage:v2.5.0
+    restart: unless-stopped
+    command: ["/garage", "server", "--single-node", "--default-bucket"]
+    environment:
+      GARAGE_RPC_SECRET: ${GARAGE_RPC_SECRET:?set GARAGE_RPC_SECRET in .env}
+      GARAGE_ADMIN_TOKEN: ${GARAGE_ADMIN_TOKEN:?set GARAGE_ADMIN_TOKEN in .env}
+      GARAGE_DEFAULT_ACCESS_KEY: ${GARAGE_ACCESS_KEY}
+      GARAGE_DEFAULT_SECRET_KEY: ${GARAGE_SECRET_KEY}
+      GARAGE_DEFAULT_BUCKET: noxvc
+    volumes:
+      - ./garage.toml:/etc/garage.toml:ro
+      - garage-meta:/var/lib/garage/meta
+      - garage-data:/var/lib/garage/data
+
+  # SFU and TURN, configured from .env. Media: UDP 7882 (primary), TCP 7881 (fallback), UDP 3478 (TURN).
+  livekit:
+    image: livekit/livekit-server:v1.13.10
+    restart: unless-stopped
+    environment:
+      LIVEKIT_CONFIG: |
+        port: 7880
+        prometheus_port: 6789
+        log_level: info
+        rtc:
+          tcp_port: 7881
+          udp_port: 7882
+          use_external_ip: false
+          node_ip: ${PUBLIC_IP:-127.0.0.1}
+        keys:
+          ${LIVEKIT_API_KEY}: ${LIVEKIT_API_SECRET}
+        turn:
+          enabled: true
+          domain: ${VOICE_DOMAIN:-localhost}
+          udp_port: 3478
+        webhook:
+          api_key: ${LIVEKIT_API_KEY}
+          urls:
+            - http://relay:8080/api/livekit/webhook
+        room:
+          empty_timeout: 30
+          departure_timeout: 15
+    ports:
+      - "${LIVEKIT_SIGNAL_BIND:-127.0.0.1:7880}:7880"   # signalling (local; with a domain Caddy serves it)
+      - "7881:7881/tcp"
+      - "7882:7882/udp"
+      - "3478:3478/udp"
+
+  # HTTPS with Let's Encrypt: APP_DOMAIN (web, API, gateway) and VOICE_DOMAIN (LiveKit signalling).
+  # Needs A records pointing to PUBLIC_IP and open ports 80/443.
+  caddy:
+    image: caddy:2.10.2
+    profiles: ["https"]
+    restart: unless-stopped
+    depends_on: [relay, livekit]
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?set APP_DOMAIN in .env}
+      VOICE_DOMAIN: ${VOICE_DOMAIN:?set VOICE_DOMAIN in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+    ports:
+      - "80:80"
+      - "443:443"
+
+  # ---------- monitoring (monitoring profile) ----------
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    profiles: ["monitoring"]
+    restart: unless-stopped
+    command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.retention.time=30d"]
+    volumes:
+      - ./monitoring/prometheus:/etc/prometheus:ro
+      - prometheus-data:/prometheus
+
+  grafana:
+    image: grafana/grafana:12.4.0
+    profiles: ["monitoring"]
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards/noxvc:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "${GRAFANA_BIND:-127.0.0.1:3000}:3000"
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    profiles: ["monitoring"]
+    restart: unless-stopped
+    environment:
+      DATA_SOURCE_NAME: postgresql://noxvc:${POSTGRES_PASSWORD}@postgres:5432/noxvc?sslmode=disable
+      PG_EXPORTER_EXTEND_QUERY_PATH: /etc/queries.yaml
+    volumes:
+      - ./monitoring/postgres-exporter/queries.yaml:/etc/queries.yaml:ro
+
+  node-exporter:
+    image: prom/node-exporter:v1.7.0
+    profiles: ["monitoring"]
+    restart: unless-stopped
+    command: ["--path.rootfs=/host"]
+    pid: host
+    volumes:
+      - /:/host:ro,rslave
+
+volumes:
+  noxvc-data: {}
+  pg-data: {}
+  garage-meta: {}
+  garage-data: {}
+  caddy-data: {}
+  prometheus-data: {}
+  grafana-data: {}

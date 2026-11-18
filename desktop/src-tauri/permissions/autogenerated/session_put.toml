@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-session-put"
+description = "Enables the session_put command without any pre-configured scope."
+commands.allow = ["session_put"]
+
+[[permission]]
+identifier = "deny-session-put"
+description = "Denies the session_put command without any pre-configured scope."
+commands.deny = ["session_put"]

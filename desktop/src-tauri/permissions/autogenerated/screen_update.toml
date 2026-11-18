@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-screen-update"
+description = "Enables the screen_update command without any pre-configured scope."
+commands.allow = ["screen_update"]
+
+[[permission]]
+identifier = "deny-screen-update"
+description = "Denies the screen_update command without any pre-configured scope."
+commands.deny = ["screen_update"]

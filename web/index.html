@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <script>
+      // Тема до первой отрисовки (без вспышки неправильной темы). Выбор — lib/theme.ts (аккаунт + localStorage).
+      (function () {
+        var root = document.documentElement, p = null;
+        try { p = JSON.parse(localStorage.getItem('relay_acc_theme') || 'null'); } catch (e) {}
+        // нет своего выбора на этом адресе — то, что поставило приложение (data-theme), иначе тёмная
+        var light = p ? p === 'light' || (p === 'system' && window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches) : root.dataset.theme === 'light';
+        root.dataset.theme = light ? 'light' : 'dark';
+        document.querySelector('meta[name="color-scheme"]').setAttribute('content', light ? 'light' : 'dark');
+      })();
+    </script>
+    <title>NoxVC</title>
+    <meta name="description" content="NoxVC — голосовые каналы, чат и трансляции экрана" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="NoxVC" />
+    <meta property="og:title" content="NoxVC" />
+    <meta property="og:description" content="Голосовые каналы, чат и трансляции экрана" />
+    <meta property="og:image" content="/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#0c0b11" />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

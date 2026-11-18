@@ -1,0 +1,32 @@
+[package]
+name = "relay"
+version = "0.1.0"
+edition = "2021"
+license = "AGPL-3.0-only"
+
+[dependencies]
+axum = { version = "0.8", features = ["ws", "multipart"] }
+tokio = { version = "1", features = ["full"] }
+tower-http = { version = "0.6", features = ["fs", "set-header"] }
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "postgres", "macros", "migrate", "json"] }
+argon2 = "0.5"
+rand = "0.8"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+futures-util = "0.3"
+hmac = "0.12"
+sha2 = "0.10"
+base64 = "0.22"
+# HMAC-SHA1 для краткоживущих учётных данных TURN (coturn use-auth-secret); та же версия уже в дереве (axum ws)
+sha1 = "=0.10.7"
+maxminddb = "=0.32.0" # местоположение сеанса по IP (база DB-IP Lite, CC BY 4.0)
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "stream"] }
+# уже в дереве (axum): ServeDir через oneshot для отдачи файлов с диска
+tower = { version = "0.5", default-features = false, features = ["util"] }
+# Метрики Prometheus (/metrics на отдельном порту): реестр + стандартный сборщик метрик процесса
+prometheus = { version = "=0.14.0", default-features = false, features = ["process"] }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+strip = true

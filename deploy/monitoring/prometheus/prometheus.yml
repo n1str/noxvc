@@ -1,0 +1,18 @@
+# Prometheus for NoxVC (monitoring profile in deploy/compose.yaml). Targets are compose service names.
+# Using your own Prometheus instead? Copy the scrape jobs and point them at the same ports (docs/monitoring.md).
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+rule_files:
+  - /etc/prometheus/relay-alerts.yml
+scrape_configs:
+  - job_name: relay-backend        # NoxVC server: users, voice, HTTP, DB pool, storage, media queue, invites
+    static_configs: [{ targets: ["relay:9464"] }]
+  - job_name: livekit
+    static_configs: [{ targets: ["livekit:6789"] }]
+  - job_name: garage
+    static_configs: [{ targets: ["garage:3903"] }]
+  - job_name: postgres
+    static_configs: [{ targets: ["postgres-exporter:9187"] }]
+  - job_name: node
+    static_configs: [{ targets: ["node-exporter:9100"] }]

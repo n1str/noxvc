@@ -1,0 +1,19 @@
+# gitleaks: known false positives — placeholder secrets of local test stacks, test vectors, examples.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "test stacks, examples and test vectors"
+paths = [
+  '''tests/stack/compose\.yaml''',
+  '''tests/demo/compose\.yaml''',
+  '''tests/demo/livekit\.yaml''',
+  '''deploy/\.env\.example''',
+  '''web/src/features/hotkeys\.tsx''',
+]
+regexes = [
+  '''0123456789abcdef''',
+  '''dGhlIHNhbXBsZSBub25jZQ==''',
+  '''YpKyKS5B8U''',
+  '''v9G/''',
+]

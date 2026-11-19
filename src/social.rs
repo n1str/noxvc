@@ -64,7 +64,8 @@ pub async fn self_json(st: &AppState, uid: i64) -> Result<Value, ApiError> {
     // администратор инстанса (backlog обратной связи) — не роль сервера
     u["is_admin"] = json!(is_admin);
     // администратору — число ожидающих запросов на приглашение (бейдж в настройках)
-    if is_admin {
+    u["invite_only"] = json!(crate::invites::invite_only());
+    if is_admin && crate::invites::invite_only() {
         u["invite_pending"] = json!(crate::invites::pending_count(&st.db).await);
     }
     u["feedback_unread"] =

@@ -164,6 +164,7 @@ async fn main() {
         .route("/me/game", put(activity::put))
         .route("/games/detectable", get(activity::detectable))
         .route("/regions", get(regions::list))
+        .route("/instance", get(invites::instance))
         .route("/users/{id}/profile", get(social::profile))
         .route("/relationships", get(social::list).post(social::request))
         .route("/relationships/{id}", delete(social::remove))

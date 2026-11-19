@@ -70,7 +70,7 @@ pub static CONFIG: LazyLock<Config> = LazyLock::new(|| {
 
 /// Основной регион (где БД, хранилище и, на этапе MVP, все комнаты).
 pub fn primary() -> &'static str {
-    CONFIG.regions.iter().find(|r| r.primary).map(|r| r.id.as_str()).unwrap_or("ru-1")
+    CONFIG.regions.iter().find(|r| r.primary).map(|r| r.id.as_str()).unwrap_or("main")
 }
 
 /// Регион запроса: только известный регион-edge из заголовка X-Relay-Region; иначе — основной.

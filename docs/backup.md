@@ -1,23 +1,25 @@
-# Backup and restore
+# Резервные копии
 
-NoxVC keeps state in three places (Docker volumes of the `noxvc` compose project):
+English: [en/backup.md](en/backup.md)
 
-| Volume | Content |
+Данные NoxVC лежат в томах Docker проекта `noxvc`:
+
+| Том | Что внутри |
 |---|---|
-| `noxvc_pg-data` | PostgreSQL: accounts, servers, messages, roles, sessions, invites |
-| `noxvc_garage-meta`, `noxvc_garage-data` | Files: attachments, avatars, banners, emoji, server icons |
-| `noxvc_noxvc-data` | Desktop update files (`updates/`) and local uploads if `RELAY_STORAGE=local` |
+| `noxvc_pg-data` | PostgreSQL: аккаунты, серверы, сообщения, роли, сеансы, приглашения |
+| `noxvc_garage-meta`, `noxvc_garage-data` | Файлы: вложения, аватары, баннеры, эмодзи, иконки серверов |
+| `noxvc_noxvc-data` | Обновления приложения (`updates/`) и локальные файлы при `RELAY_STORAGE=local` |
 
-Keep `deploy/.env` too: without `POSTGRES_PASSWORD`, `GARAGE_*` and `INVITE_KEY` a restore is incomplete.
+Сохраняйте и `deploy/.env`: без `POSTGRES_PASSWORD`, `GARAGE_*` и `INVITE_KEY` восстановление неполное.
 
-## Back up
+## Сделать копию
 
 ```sh
 cd deploy
 ts=$(date +%Y%m%d-%H%M%S); mkdir -p ~/noxvc-backups
-# database: consistent dump while running
+# база: согласованный дамп на ходу
 docker compose exec -T postgres pg_dump -U noxvc -d noxvc -Fc > ~/noxvc-backups/db-$ts.dump
-# files: stop Garage briefly for a consistent copy
+# файлы: Garage ненадолго останавливаем, чтобы копия была согласованной
 docker compose stop garage
 for v in garage-meta garage-data noxvc-data; do
   docker run --rm -v noxvc_$v:/v:ro -v ~/noxvc-backups:/b alpine tar czf /b/$v-$ts.tgz -C /v .
@@ -26,13 +28,13 @@ docker compose start garage
 cp .env ~/noxvc-backups/env-$ts
 ```
 
-Copy the backup directory off the server. Test a restore regularly.
+Унесите каталог копий с сервера и регулярно проверяйте восстановление.
 
-## Restore
+## Восстановить
 
 ```sh
 cd deploy
-docker compose down                       # keep volumes
+docker compose down                       # тома сохраняются
 for v in garage-meta garage-data noxvc-data; do
   docker run --rm -v noxvc_$v:/v -v ~/noxvc-backups:/b alpine sh -c "rm -rf /v/* && tar xzf /b/$v-<ts>.tgz -C /v"
 done

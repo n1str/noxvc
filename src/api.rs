@@ -151,7 +151,8 @@ pub async fn register(State(st): State<AppState>, headers: HeaderMap, Json(c): J
     let ip = crate::invites::ip_key(&headers);
     crate::invites::register_attempt(&ip)?;
     let code = crate::invites::normalize(c.code.as_deref().unwrap_or(""));
-    if code.is_empty() {
+    // открытая регистрация (по умолчанию) — код не нужен; режим invite — без кода нельзя
+    if code.is_empty() && crate::invites::invite_only() {
         return Err(crate::invites::invalid_code(&ip));
     }
     let name = c.username.trim().to_string();
@@ -170,9 +171,16 @@ pub async fn register(State(st): State<AppState>, headers: HeaderMap, Json(c): J
 
     let color = COLORS[rand::random::<usize>() % COLORS.len()];
     let mut tx = st.db.begin().await?;
-    let Some((invite, guild)) = crate::invites::consume(&mut tx, &code).await? else {
-        return Err(crate::invites::invalid_code(&ip));
+    // код (если есть) расходуется в той же транзакции; неверный — отказ в любом режиме
+    let used = if code.is_empty() {
+        None
+    } else {
+        let Some(u) = crate::invites::consume(&mut tx, &code).await? else {
+            return Err(crate::invites::invalid_code(&ip));
+        };
+        Some(u)
     };
+    let guild = used.and_then(|(_, g)| g);
     let id: i64 =
         match sqlx::query_scalar("INSERT INTO users(username, display_name, password_hash, color, created_at) VALUES($1, $1, $2, $3, $4) RETURNING id")
             .bind(&name)
@@ -185,7 +193,9 @@ pub async fn register(State(st): State<AppState>, headers: HeaderMap, Json(c): J
             Err(e) if is_unique_violation(&e) => return Err(ApiError(StatusCode::CONFLICT, "Это имя уже занято".into())),
             r => r?,
         };
-    crate::invites::mark_used(&mut tx, invite, id).await?;
+    if let Some((invite, _)) = used {
+        crate::invites::mark_used(&mut tx, invite, id).await?;
+    }
     if crate::invites::is_listed_admin(&name) {
         sqlx::query("UPDATE users SET is_admin=true WHERE id=$1").bind(id).execute(&mut *tx).await?;
     }
@@ -212,7 +222,11 @@ pub async fn register(State(st): State<AppState>, headers: HeaderMap, Json(c): J
         _ => None,
     };
     tx.commit().await?;
-    eprintln!("регистрация: @{name} по коду №{invite}{}", joined.map(|g| format!(", сервер {g}")).unwrap_or_default());
+    eprintln!(
+        "регистрация: @{name}{}{}",
+        used.map(|(i, _)| format!(" по коду №{i}")).unwrap_or_default(),
+        joined.map(|g| format!(", сервер {g}")).unwrap_or_default()
+    );
     if let Some(g) = joined {
         let mut u = db::user_json(&st.db, id).await?;
         crate::social::present(&st, &mut u);

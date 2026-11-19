@@ -1,82 +1,83 @@
-# Desktop client (Windows)
+# Приложение для Windows
 
-The desktop app is a Tauri 2 window (WebView2) that loads the web client from **your** server, plus native features:
-global hotkeys and push-to-talk over games, tray, autostart, native screen capture, game activity, signed updates.
-**Release installer** (GitHub Releases): on first start it asks for the server address (`https://app.example.com`)
-and remembers it; "Change server address" appears on the connection screen if the server is unreachable. Release
-builds have no update key, so they do not auto-update — install new releases manually, or build your own client.
+Приложение — окно Tauri 2 (WebView2), которое загружает веб-клиент с **вашего** сервера, плюс нативные функции:
+глобальные горячие клавиши и рация поверх игр, трей, автозапуск, нативный захват экрана, игровая активность,
+подписанные обновления.
 
-**Your own build** compiles your server address (`RELAY_SERVER`, then the address cannot be changed in the app) and
-your update signing key in, so your users get signed auto-updates from your server.
+English: [en/desktop-client.md](en/desktop-client.md)
 
-## Requirements
+**Установщик из Releases** при первом запуске спрашивает адрес сервера (`https://app.example.com`) и запоминает его;
+если сервер недоступен, на экране подключения есть «Изменить адрес сервера». В сборке из Releases нет ключа
+обновлений — она не обновляется сама: ставьте новые версии вручную или соберите свой клиент.
+
+**Своя сборка** вшивает адрес вашего сервера (`RELAY_SERVER`, тогда в приложении его не поменять) и ваш ключ подписи,
+и ваши пользователи получают подписанные автообновления с вашего сервера.
+
+## Что нужно
 
 - Windows 10/11 x64, [Rust](https://rustup.rs) (stable, MSVC), Node.js 20+, Visual Studio Build Tools (C++).
-- WebView2 runtime (preinstalled on Windows 11).
+- WebView2 (в Windows 11 уже есть).
 
-## Build
+## Сборка
 
 ```powershell
 cd desktop
 npm install
-$env:RELAY_SERVER = "https://app.example.com"     # your server (omit to ask on first start)
-$env:RELAY_UPDATE_KEY = "<public key, see below>" # optional: enables signed auto-updates
+$env:RELAY_SERVER = "https://app.example.com"     # ваш сервер (не задавать — спросит при первом запуске)
+$env:RELAY_UPDATE_KEY = "<открытый ключ, см. ниже>" # по желанию: включает подписанные автообновления
 npm run build
 ```
 
-The installer is written to `desktop/src-tauri/target/release/bundle/nsis/`.
+Установщик появится в `desktop/src-tauri/target/release/bundle/nsis/`. Дополнительно (см. [configuration.md](configuration.md)):
+`RELAY_ENDPOINTS` — несколько точек входа с автопереключением, `RELAY_PINS` — пины для серверов с самоподписанным
+сертификатом.
 
-Optional build variables (see [configuration.md](configuration.md#desktop-client-build-time)):
-- `RELAY_ENDPOINTS` — several entry points with automatic failover, e.g.
-  `main=https://app.example.com,main-ip=https://203.0.113.10:8443#pin#fallback`;
-- `RELAY_PINS` — SPKI pins for entry points with self-signed certificates (`#pin`).
+## Ключи подписи обновлений
 
-## Update signing keys
-
-Updates are verified with Ed25519: the app has the public key compiled in and installs only installers whose
-manifest is signed with the matching private key. Generate your own pair once:
+Обновления проверяются по Ed25519: в приложение вшит открытый ключ, и оно ставит только установщики, манифест которых
+подписан парным закрытым ключом. Создайте свою пару один раз:
 
 ```sh
 node -e "const c=require('crypto');const k=c.generateKeyPairSync('ed25519');require('fs').writeFileSync('update-signing-key.pem',k.privateKey.export({type:'pkcs8',format:'pem'}));console.log(k.publicKey.export({type:'spki',format:'der'}).subarray(12).toString('base64'))"
 ```
 
-- The printed line is the **public key** → `RELAY_UPDATE_KEY`.
-- `update-signing-key.pem` is the **private key**: keep it off the server and out of git
-  (default location: `%USERPROFILE%\.relay\update-signing-key.pem`, or set `RELAY_UPDATE_SIGNING_KEY=path`).
+- Выведенная строка — **открытый ключ** → `RELAY_UPDATE_KEY`.
+- `update-signing-key.pem` — **закрытый ключ**: не кладите его на сервер и в git (по умолчанию
+  `%USERPROFILE%\.relay\update-signing-key.pem` или `RELAY_UPDATE_SIGNING_KEY=путь`).
 
-Without `RELAY_UPDATE_KEY` the app never checks for updates.
+Без `RELAY_UPDATE_KEY` приложение обновления не проверяет.
 
-## Publishing an update
+## Выпуск обновления
 
-`desktop/release.mjs` bumps the version, builds, signs and uploads the installer and `latest.json` to the server's
-data volume (`/data/updates`), where running apps pick it up:
+`desktop/release.mjs` повышает версию, собирает, подписывает и загружает установщик и `latest.json` в том данных
+сервера (`/data/updates`), откуда их забирают запущенные приложения:
 
 ```powershell
 $env:RELAY_SERVER = "https://app.example.com"
-$env:RELAY_UPDATE_KEY = "<public key>"
-$env:RELAY_DEPLOY_HOST = "user@your-server"     # ssh access; docker on that host
-node release.mjs --notes "What's new"
+$env:RELAY_UPDATE_KEY = "<открытый ключ>"
+$env:RELAY_DEPLOY_HOST = "user@ваш-сервер"     # доступ по ssh, на сервере — docker
+node release.mjs --notes "Что нового"
 ```
 
-Options: `node release.mjs 1.2.0` (explicit version), `--channel test` (only builds with `RELAY_UPDATE_CHANNEL=test`
-see it), `--no-build` (sign and upload the already built installer), `RELAY_CONTAINER` (default `noxvc-relay-1`).
+Параметры: `node release.mjs 1.2.0` (своя версия), `--channel test` (видят только сборки с `RELAY_UPDATE_CHANNEL=test`),
+`--no-build` (подписать и загрузить уже собранный), `RELAY_CONTAINER` (по умолчанию `noxvc-relay-1`).
 
-Users can also download the current installer from the web client: **Settings → Download the app**
-(`/download/windows`).
+Пользователи веб-версии могут скачать текущий установщик в **Настройки → Скачать приложение** (`/download/windows`).
 
-## Unsigned installer
+## Неподписанный установщик
 
-The installer is not code-signed, so Windows SmartScreen shows "Windows protected your PC" on first run:
-**More info → Run anyway**. Compare the SHA-256 (`Get-FileHash .\Relay_x.y.z_x64-setup.exe`) with the one published
-next to the release.
+Установщик не подписан сертификатом издателя, поэтому SmartScreen при первом запуске пишет «Система Windows защитила
+ваш компьютер»: **Подробнее → Выполнить в любом случае**. Сверьте SHA-256 (`Get-FileHash .\Relay_x.y.z_x64-setup.exe`)
+с опубликованным рядом с релизом.
 
-## Links inside the app
+## Ссылки внутри приложения
 
-Message links and invites copied in the app look like `noxvc://invite/<code>` and `noxvc://msg/<server>/<channel>/<id>`
-(older `relay://…` links keep working). They are opened inside the app; the scheme is not registered system-wide.
+Ссылки на сообщения и приглашения в приложении выглядят как `noxvc://invite/<код>` и
+`noxvc://msg/<сервер>/<канал>/<id>` (старые `relay://…` тоже открываются). Они открываются внутри приложения; в
+системе схема не регистрируется.
 
-## Known limitations
+## Ограничения
 
-- Windows only. The installer's own window, the process name in Task Manager and the autostart entry are named
-  `Relay` (the internal product name; changing it would break updates of existing installs).
-- Global hotkeys do not reach games running as administrator unless the app also runs as administrator.
+- Только Windows. Окно установщика, имя процесса в диспетчере задач и запись автозагрузки называются `Relay`
+  (внутреннее имя продукта: его смена сломала бы обновление уже установленных копий).
+- Горячие клавиши не доходят до игр, запущенных от администратора, если приложение не запущено так же.

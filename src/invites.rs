@@ -31,6 +31,19 @@ pub const REQUEST_TTL: i64 = 14 * DAY;
 pub const MAX_PENDING: i64 = 3;
 const INVALID: &str = "Код приглашения недействителен";
 
+// ---------- режим регистрации ----------
+
+/// RELAY_REGISTRATION=invite — только по кодам приглашений; по умолчанию (open) — свободная регистрация
+/// (коды и запросы тогда необязательны: код с сервером по-прежнему добавляет новичка на сервер).
+pub fn invite_only() -> bool {
+    static V: LazyLock<bool> = LazyLock::new(|| std::env::var("RELAY_REGISTRATION").is_ok_and(|v| v.trim().eq_ignore_ascii_case("invite")));
+    *V
+}
+/// GET /api/instance — публичные настройки инстанса для экрана входа.
+pub async fn instance() -> Json<Value> {
+    Json(json!({ "registration": if invite_only() { "invite" } else { "open" } }))
+}
+
 // ---------- коды ----------
 
 /// Байты → символы алфавита (отбраковка: байт < 248 = 31·8, без смещения распределения).

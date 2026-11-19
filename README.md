@@ -5,146 +5,147 @@
   </picture>
 </p>
 
-<h3 align="center">Your voice. Your server. Your rules.</h3>
+<h3 align="center">Твой голос. Твой сервер. Твои правила.</h3>
 
-<p align="center">Self-hosted, open-source Discord alternative built with Rust, Tauri and LiveKit.</p>
+<p align="center">Самостоятельно разворачиваемая альтернатива Discord с открытым кодом на Rust, Tauri и LiveKit.</p>
+
+<p align="center"><b>Русский</b> · <a href="README.en.md">English</a></p>
 
 <p align="center">
-  <a href="LICENSE"><img alt="License: AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-7c5cff"></a>
-  <a href="https://github.com/n1str/noxvc/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/n1str/noxvc?color=7c5cff"></a>
+  <a href="LICENSE"><img alt="Лицензия AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-7c5cff"></a>
+  <a href="https://github.com/n1str/noxvc/releases/latest"><img alt="Последний релиз" src="https://img.shields.io/github/v/release/n1str/noxvc?color=7c5cff"></a>
   <a href="https://github.com/n1str/noxvc/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/n1str/noxvc/actions/workflows/ci.yml/badge.svg"></a>
 </p>
 
-<p align="center"><img src="docs/media/demo.gif" alt="Joining a voice channel, watching a screen share and chatting in NoxVC" width="860"></p>
+<p align="center"><img src="docs/media/demo.gif" alt="Вход в голосовой канал, просмотр демонстрации экрана и чат в NoxVC" width="860"></p>
 
-## Quick start
+## Быстрый старт
 
-Requires Docker with Compose v2. Runs on `localhost` with development secrets:
+**На сервере (VDS)** — Linux с публичным IP и двумя DNS-именами (например, `app.example.com` и `voice.example.com`):
+
+```sh
+git clone https://github.com/n1str/noxvc.git && cd noxvc && sudo ./install.sh
+```
+
+Скрипт спросит домен и логин администратора, сгенерирует секреты, запустит всё в Docker с HTTPS (Let's Encrypt) и
+сам создаст аккаунт администратора — в конце покажет логин и пароль. Подробно, по шагам:
+[docs/installation.md](docs/installation.md).
+
+**На своём компьютере** (нужен Docker с Compose v2):
 
 ```sh
 git clone https://github.com/n1str/noxvc.git && cd noxvc/deploy
 cp .env.example .env
 docker compose up -d --build
-docker compose exec relay /app/relay admin invite create --note "first admin"
 ```
 
-Open <http://localhost:8080>, choose **Register with a code**, paste the code from the last command and register as
-`admin` — the username listed in `INSTANCE_ADMINS` in `.env`, so this account becomes the instance administrator.
-Voice works on `localhost` out of the box; for other machines put it behind a domain with HTTPS
-([installation](docs/installation.md), [deployment](docs/deployment.md)).
+Откройте <http://localhost:8080> и зарегистрируйтесь с логином `admin` — он указан в `INSTANCE_ADMINS` и станет
+администратором.
 
-**Windows app:** download the installer from [Releases](https://github.com/n1str/noxvc/releases) — on first start it
-asks for your server address (HTTPS). To ship signed auto-updates to your users, build the client yourself
-([desktop-client.md](docs/desktop-client.md)).
+**Приложение для Windows:** установщик — в [Releases](https://github.com/n1str/noxvc/releases); при первом запуске оно
+спросит адрес вашего сервера (HTTPS). Чтобы раздавать пользователям подписанные автообновления, соберите клиент сами
+([docs/desktop-client.md](docs/desktop-client.md)).
 
-## Features
+## Возможности
 
-**Voice, video and screen sharing**
-- Voice channels on LiveKit (WebRTC, Opus): noise suppression and echo cancellation, voice activity gate with
-  adjustable threshold, push-to-talk, per-user volume, speaking indicators.
-- Cameras and screen sharing with audio — a window or the whole screen. The Windows app captures natively
-  (Windows Graphics Capture + hardware H.264) and can mute the stream's audio separately.
-- Built-in TURN for clients behind strict NAT; private calls in direct messages; stage channels.
+**Голос, видео и демонстрация экрана**
+- Голосовые каналы на LiveKit (WebRTC, Opus): шумоподавление и эхоподавление, порог голоса, рация (push-to-talk),
+  громкость каждого участника, индикаторы речи.
+- Камеры и демонстрация экрана со звуком — окно или весь экран. Приложение для Windows захватывает экран нативно
+  (Windows Graphics Capture + аппаратный H.264) и умеет выключать звук трансляции отдельно.
+- Встроенный TURN для клиентов за строгим NAT; звонки в личных сообщениях; каналы-сцены.
 
-**Text**
-- Channels, categories, replies, threads and forums, polls, reactions, custom emoji, mentions, markdown with
-  code highlighting, attachments, link previews, pins, full-text search, unread markers.
+**Текст**
+- Каналы и категории, ответы, ветки и форумы, опросы, реакции, свои эмодзи, упоминания, markdown с подсветкой кода,
+  вложения, превью ссылок, закрепы, полнотекстовый поиск, непрочитанное.
 
-**Roles and permissions**
-- Discord-style roles: hierarchy, colors, permission overwrites on categories and channels, "view server as role".
+**Роли и права**
+- Роли как в Discord: иерархия, цвета, переопределения прав на категории и каналы, «посмотреть сервер как роль».
 
-**Profiles**
-- Avatars and banners (animated GIF/WebP/video supported), profile color, status, bio, game activity
-  (detected by the Windows app), light and dark theme, Russian and English UI.
+**Профили**
+- Аватары и баннеры (в том числе анимированные GIF/WebP/видео), цвет профиля, статус, «о себе», игровая активность
+  (определяет приложение для Windows), светлая и тёмная тема, интерфейс на русском и английском.
 
-**Invite-only by design**
-- No open registration: accounts are created only with single-use invite codes (≈119 bits, stored hashed).
-- Members can request an invite for someone; the instance admin approves or rejects it in the app.
-- Admin panel: invite requests, codes, history, a bug-report/feature-request backlog, session and security log.
-- CLI on the server: `relay admin invite create|list|revoke`, `relay admin requests list`.
+**Администрирование**
+- Администраторы инстанса задаются в конфиге сервера; панель обращений (баги и предложения пользователей).
+- Необязательный режим «только по приглашениям» (`REGISTRATION=invite`): одноразовые коды, запросы участников
+  с одобрением администратора, CLI `relay admin invite …`.
+- Список сеансов и журнал безопасности у каждого пользователя.
 
-**Windows client (Tauri 2)**
-- Global hotkeys that work over games (Raw Input, nothing is intercepted), push-to-talk, tray, autostart,
-  signed auto-updates, native screen capture.
+**Приложение для Windows (Tauri 2)**
+- Глобальные горячие клавиши поверх игр (Raw Input, нажатия не перехватываются), рация, трей, автозапуск,
+  подписанные автообновления, нативный захват экрана.
 
-**Operations**
-- One `docker compose` file: server, PostgreSQL, S3 storage (Garage), LiveKit; optional Caddy (Let's Encrypt) and
-  monitoring (Prometheus, Grafana dashboards, PostgreSQL and node exporters, alert rules).
+**Эксплуатация**
+- Один файл `docker compose`: сервер, PostgreSQL, S3-хранилище (Garage), LiveKit; по желанию — Caddy (Let's Encrypt)
+  и мониторинг (Prometheus, дашборды Grafana, экспортеры PostgreSQL и сервера, правила алертов).
 
-**Lightweight.** Measured with 10 users in one voice channel, all transmitting audio at the same time, plus a chat
-message every second: the NoxVC server used ~0.3% CPU and 147 MB RAM, LiveKit ~0.24 of one CPU core and 96 MB,
-PostgreSQL ~2% CPU and 64 MB, Garage 13 MB — about 320 MB of RAM in total. Conditions: Docker Desktop (WSL2) on a
-4-vCPU / 8 GB machine, `docker stats` sampled over ~25 s; media traffic was local, so this excludes network limits.
+**Нетребовательность.** Замер: 10 человек в одном голосовом канале, все одновременно передают звук, плюс сообщение в
+чат каждую секунду. Сервер NoxVC — около 0,3 % CPU и 147 МБ памяти, LiveKit — около 0,24 ядра и 96 МБ, PostgreSQL —
+около 2 % CPU и 64 МБ, Garage — 13 МБ; всего около 320 МБ памяти. Условия: Docker Desktop (WSL2), 4 vCPU / 8 ГБ,
+`docker stats` около 25 секунд; медиа шло локально, сетевые ограничения не учитываются.
 
-## Screenshots
+## Скриншоты
 
-| Chat | Voice channel |
+| Чат | Голосовой канал |
 |---|---|
-| ![Chat with a poll, reactions and a thread](docs/media/chat.webp) | ![Voice channel with speaking indicators](docs/media/voice.webp) |
-| **Screen sharing** | **Profile** |
-| ![Screen sharing in a voice channel](docs/media/stream.webp) | ![Profile with banner and game activity](docs/media/profile.webp) |
-| **Roles** | **Light theme** |
-| ![Role settings](docs/media/roles.webp) | ![Light theme](docs/media/light.webp) |
+| ![Чат с опросом, реакциями и веткой](docs/media/chat.webp) | ![Голосовой канал с индикаторами речи](docs/media/voice.webp) |
+| **Демонстрация экрана** | **Профиль** |
+| ![Демонстрация экрана в голосовом канале](docs/media/stream.webp) | ![Профиль с баннером и игровой активностью](docs/media/profile.webp) |
+| **Роли** | **Светлая тема** |
+| ![Настройки ролей](docs/media/roles.webp) | ![Светлая тема](docs/media/light.webp) |
 
-All screenshots come from a demo instance with made-up users and data (`tests/demo`).
+Все скриншоты сняты на демо-стенде с выдуманными пользователями и данными (`tests/demo`).
 
-## Architecture
+## Как устроено
 
 ```
- Browser / Windows app (Tauri: WebView2 + native capture, hotkeys)
-        │  HTTPS: web client, REST /api, WebSocket /gateway        │  WebRTC media (UDP 7882 / TCP 7881 / TURN 3478)
+ Браузер / приложение для Windows (Tauri: WebView2 + нативный захват, горячие клавиши)
+        │  HTTPS: веб-клиент, REST /api, WebSocket /gateway        │  медиа WebRTC (UDP 7882 / TCP 7881 / TURN 3478)
         ▼                                                           ▼
-   Caddy (TLS) ──► NoxVC server (Rust, axum) ──── webhooks ────► LiveKit SFU (+ TURN)
+   Caddy (TLS) ──► сервер NoxVC (Rust, axum) ──── вебхуки ────► LiveKit SFU (+ TURN)
                       │            │
-                PostgreSQL     Garage (S3): attachments, avatars, emoji
+                PostgreSQL     Garage (S3): вложения, аватары, эмодзи
 ```
 
-The server is a single Rust binary: REST API, a Discord-style gateway (sequence numbers, RESUME), permission engine,
-search, media processing queue (ffmpeg), invite-only registration and Prometheus metrics. It issues LiveKit tokens and
-tracks voice presence through LiveKit webhooks. Details: [docs/architecture.md](docs/architecture.md).
+Сервер — один бинарник на Rust: REST API, gateway в стиле Discord (номера событий, RESUME), движок прав, поиск,
+очередь обработки медиа (ffmpeg), регистрация (открытая или по приглашениям) и метрики Prometheus. Он выдаёт токены
+LiveKit и узнаёт, кто в голосе, по вебхукам LiveKit. Подробнее: [docs/architecture.md](docs/architecture.md).
 
-## Requirements
+## Требования
 
-- Linux server (x86_64) with Docker. Running needs little (about 320 MB RAM for 10 people in voice, see the measurement
-  above); building the image compiles Rust and needs about 4 GB RAM — build on another machine if the server is smaller.
-- A domain with two names (e.g. `app.example.com`, `voice.example.com`) for HTTPS.
-- Open ports: TCP 80, 443 (HTTPS), TCP 7881 and UDP 7882 (media), UDP 3478 (TURN).
-- Windows 10/11 for the desktop app (any modern browser for the web client).
+- Сервер на Linux (x86_64) с Docker. Для работы нужно немного (около 320 МБ памяти на 10 человек в голосе, см. замер
+  выше); сборка образа компилирует Rust и требует около 4 ГБ памяти.
+- Домен с двумя именами (например, `app.example.com` и `voice.example.com`) для HTTPS.
+- Открытые порты: TCP 80, 443 (HTTPS), TCP 7881 и UDP 7882 (медиа), UDP 3478 (TURN).
+- Windows 10/11 для приложения; веб-клиент работает в любом современном браузере.
 
-## Documentation
+## Документация
 
-[Installation](docs/installation.md) · [Configuration](docs/configuration.md) · [Deployment](docs/deployment.md) ·
-[Desktop client](docs/desktop-client.md) · [Administration](docs/administration.md) · [Monitoring](docs/monitoring.md) ·
-[Backup](docs/backup.md) · [Architecture](docs/architecture.md) · [Decisions](docs/decisions/)
+[Установка](docs/installation.md) · [Настройки](docs/configuration.md) · [Развёртывание](docs/deployment.md) ·
+[Приложение для Windows](docs/desktop-client.md) · [Администрирование](docs/administration.md) ·
+[Мониторинг](docs/monitoring.md) · [Резервные копии](docs/backup.md) · [Архитектура](docs/architecture.md) ·
+[Решения](docs/decisions/) · English: [docs/en/](docs/en/)
 
-## Roadmap
+## Что ещё не сделано
 
-Not done yet — contributions welcome:
-- macOS and Linux desktop clients, mobile apps (the web client works in mobile browsers, but is not optimized for them);
-- end-to-end encryption (media and messages are encrypted in transit only, the server can read them);
-- federation between servers;
-- email (account recovery, notifications) and two-factor authentication;
-- a signed Windows installer (SmartScreen warns about unsigned installers);
-- Content-Security-Policy enabled by default (see [SECURITY.md](SECURITY.md)).
+- Клиенты для macOS и Linux, мобильные приложения (веб-клиент открывается в мобильном браузере, но под него не
+  оптимизирован);
+- сквозное шифрование (сообщения и медиа шифруются только при передаче, сервер может их прочитать);
+- федерация между серверами;
+- почта (восстановление доступа, уведомления) и двухфакторная аутентификация;
+- подписанный установщик для Windows (SmartScreen предупреждает о неподписанных);
+- Content-Security-Policy по умолчанию (см. [SECURITY.md](SECURITY.md)).
 
-## How it was built
+## Как сделан
 
-AI tools were used during development. Code comments are mostly in Russian.
+При разработке использовались инструменты ИИ. Комментарии в коде в основном на русском.
 
-## Contributing
+## Участие в разработке
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Security issues: [SECURITY.md](SECURITY.md).
+См. [CONTRIBUTING.md](CONTRIBUTING.md). Уязвимости: [SECURITY.md](SECURITY.md).
 
-## License
+## Лицензия
 
-[AGPL-3.0](LICENSE) © n1str. If you run a modified version as a network service, you must offer its source code to
-its users.
-
----
-
-## По-русски
-
-**NoxVC** — самостоятельно разворачиваемая альтернатива Discord с открытым кодом: голосовые каналы, видео,
-демонстрация экрана со звуком, текстовые каналы с ветками и опросами, роли и права, приложение для Windows.
-Регистрация — только по приглашениям. Быстрый старт — выше (четыре команды), подробности — в [docs/](docs/).
-Интерфейс на русском и английском. Лицензия AGPL-3.0.
+[AGPL-3.0](LICENSE) © n1str. Если вы запускаете изменённую версию как сетевой сервис, вы обязаны предоставить её
+исходный код пользователям.

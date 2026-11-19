@@ -1,4 +1,5 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
+import { api } from '../lib/api';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'motion/react';
 import { Lock } from 'lucide-react';
@@ -15,7 +16,10 @@ const startCode = new URLSearchParams(START_SEARCH).get('code') ?? '';
 
 export function Auth() {
   const { t } = useTranslation();
-  const serverInvite = /^#invite\//.test(location.hash);
+  // режим регистрации сервера: open — как обычно; invite — только по коду (src/invites.rs)
+  const [inviteOnly, setInviteOnly] = useState(false);
+  useEffect(() => { api<{ registration: string }>('GET', '/instance').then((d) => setInviteOnly(d.registration === 'invite')).catch(() => {}); }, []);
+  const serverInvite = inviteOnly && /^#invite\//.test(location.hash);
   const [register, setRegister] = useState(() => !serverInvite && (/^\/register\/?$/.test(START_PATH) || !!startCode));
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -42,18 +46,18 @@ export function Auth() {
         <AnimatePresence mode="wait" initial={false}>
           <motion.div key={String(register)} initial={{ opacity: 0, x: register ? 12 : -12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
             <h1>{register ? t('auth.create') : t('auth.welcome')}</h1>
-            <p className="muted">{register ? t('auth.createSub') : t('auth.welcomeSub')}</p>
+            <p className="muted">{register ? (inviteOnly ? t('auth.createSub') : t('auth.createSubOpen')) : t('auth.welcomeSub')}</p>
           </motion.div>
         </AnimatePresence>
-        {register && <Input name="code" label={t('auth.code')} defaultValue={startCode} autoComplete="off" spellCheck={false} required autoFocus={!startCode} maxLength={64} />}
+        {register && (inviteOnly || !!startCode) && <Input name="code" label={t('auth.code')} defaultValue={startCode} autoComplete="off" spellCheck={false} required autoFocus={!startCode} maxLength={64} />}
         <Input name="username" label={t('auth.username')} autoComplete="username" required autoFocus={!register || !!startCode} />
         <Input name="password" type="password" label={t('auth.password')} autoComplete={register ? 'new-password' : 'current-password'} required />
         {error && <p className="error" role="alert">{error}</p>}
         <Button type="submit" variant="primary" disabled={busy}>{register ? t('auth.register') : t('auth.login')}</Button>
         {!serverInvite && (
           <p className="muted small">
-            {register ? t('auth.haveAccount') : t('auth.haveCode')}{' '}
-            <button type="button" className="link" onClick={() => { setRegister(!register); setError(''); }}>{register ? t('auth.toLogin') : t('auth.toRegister')}</button>
+            {register ? t('auth.haveAccount') : inviteOnly ? t('auth.haveCode') : t('auth.needAccount')}{' '}
+            <button type="button" className="link" onClick={() => { setRegister(!register); setError(''); }}>{register ? t('auth.toLogin') : inviteOnly ? t('auth.toRegister') : t('auth.toRegisterOpen')}</button>
           </p>
         )}
       </motion.form>

@@ -1,79 +1,82 @@
-# Configuration
+# Настройки
 
-NoxVC is configured with environment variables. With Docker Compose you set them in `deploy/.env`
-(template: [`deploy/.env.example`](../deploy/.env.example)); `deploy/compose.yaml` maps them to the server
-variables below.
+NoxVC настраивается переменными окружения. При запуске через Docker Compose они задаются в `deploy/.env`
+(шаблон — [`deploy/.env.example`](../deploy/.env.example)); `deploy/compose.yaml` передаёт их серверу.
+
+English: [en/configuration.md](en/configuration.md)
 
 ## Compose (`deploy/.env`)
 
-| Variable | Default | Description |
+| Переменная | По умолчанию | Что задаёт |
 |---|---|---|
-| `POSTGRES_PASSWORD` | — (required) | Password of the `noxvc` database user. |
-| `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` | — (required) | LiveKit credentials; the server signs voice tokens with them. Secret: 32+ characters. |
-| `GARAGE_RPC_SECRET` | — (required) | Garage RPC secret, 64 hex characters. |
-| `GARAGE_ADMIN_TOKEN` | — (required) | Garage admin API token. |
-| `GARAGE_ACCESS_KEY`, `GARAGE_SECRET_KEY` | — (required) | S3 credentials created in Garage on first start (`GK` + 32 hex, 64 hex). |
-| `INVITE_KEY` | — (required) | HMAC key for invite codes of approved requests (32+ characters). |
-| `INSTANCE_ADMINS` | empty | Instance administrators: usernames, comma-separated. The only way to grant admin rights. |
-| `APP_URL` | `http://localhost:8080` | Public URL of the app (used in invite links and link previews). |
-| `SITE_URL` | `APP_URL` | Optional separate site for public invite pages (`/invite/<code>`). |
-| `LIVEKIT_PUBLIC_URL` | `ws://localhost:7880` | LiveKit URL the clients connect to (`wss://voice.example.com` behind Caddy). |
-| `PUBLIC_IP` | `127.0.0.1` | Server IP that LiveKit announces to clients for media. |
-| `APP_DOMAIN`, `VOICE_DOMAIN` | — | Domains for the `https` profile (Caddy + Let's Encrypt). `VOICE_DOMAIN` is also the TURN host name. |
-| `HTTP_BIND` | `127.0.0.1:8080` | Host address of the app HTTP port. |
-| `LIVEKIT_SIGNAL_BIND` | `127.0.0.1:7880` | Host address of the LiveKit signalling port (local use; Caddy serves it with a domain). |
-| `GEOIP_DB` | empty | Path (inside the container) to a DB-IP Lite / MaxMind city `.mmdb` for the session log. Empty — no geolocation. |
-| `GRAFANA_ADMIN_PASSWORD` | `admin` | Grafana admin password (`monitoring` profile). |
-| `GRAFANA_BIND` | `127.0.0.1:3000` | Host address of Grafana. |
+| `POSTGRES_PASSWORD` | — (обязательно) | Пароль пользователя базы `noxvc`. |
+| `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` | — (обязательно) | Ключи LiveKit: ими сервер подписывает токены входа в голос. Секрет — от 32 символов. |
+| `GARAGE_RPC_SECRET` | — (обязательно) | Секрет RPC Garage, 64 hex-символа. |
+| `GARAGE_ADMIN_TOKEN` | — (обязательно) | Токен API администрирования Garage. |
+| `GARAGE_ACCESS_KEY`, `GARAGE_SECRET_KEY` | — (обязательно) | Ключи S3, создаются в Garage при первом запуске (`GK` + 32 hex, 64 hex). |
+| `INVITE_KEY` | — (обязательно) | Ключ HMAC для кодов приглашений по одобренным запросам (от 32 символов). |
+| `REGISTRATION` | `open` | `open` — регистрация для всех; `invite` — только по коду приглашения ([администрирование](administration.md)). |
+| `INSTANCE_ADMINS` | пусто | Администраторы инстанса — логины через запятую. Единственный способ назначить администратора. |
+| `APP_URL` | `http://localhost:8080` | Публичный адрес приложения (ссылки-приглашения, превью). |
+| `SITE_URL` | `APP_URL` | Отдельный сайт для публичных страниц приглашений (`/invite/<код>`), если нужен. |
+| `LIVEKIT_PUBLIC_URL` | `ws://localhost:7880` | Адрес LiveKit для клиентов (с доменом — `wss://voice.example.com`). |
+| `PUBLIC_IP` | `127.0.0.1` | IP сервера, который LiveKit сообщает клиентам для медиа. |
+| `APP_DOMAIN`, `VOICE_DOMAIN` | — | Домены для профиля `https` (Caddy + Let's Encrypt). `VOICE_DOMAIN` — ещё и имя TURN. |
+| `HTTP_BIND` | `127.0.0.1:8080` | Адрес HTTP-порта приложения на хосте. |
+| `LIVEKIT_SIGNAL_BIND` | `127.0.0.1:7880` | Адрес порта сигнализации LiveKit на хосте (локально; с доменом его отдаёт Caddy). |
+| `GEOIP_DB` | пусто | Путь (внутри контейнера) к базе городов `.mmdb` (DB-IP Lite / MaxMind) для журнала сеансов. Пусто — без геолокации. |
+| `GRAFANA_ADMIN_PASSWORD` | `admin` | Пароль администратора Grafana (профиль `monitoring`). |
+| `GRAFANA_BIND` | `127.0.0.1:3000` | Адрес Grafana на хосте. |
 
-Generate production secrets with `deploy/gen-env.sh > deploy/.env`.
+Секреты для сервера: `deploy/gen-env.sh > deploy/.env` (это делает и `install.sh`).
 
-## Server (`relay` binary)
+## Сервер (бинарник `relay`)
 
-| Variable | Default | Description |
+| Переменная | По умолчанию | Что задаёт |
 |---|---|---|
-| `DATABASE_URL` | `postgres://relay:relay@127.0.0.1:55432/relay` | PostgreSQL connection string. Migrations run on start. |
-| `RELAY_ADDR` | `0.0.0.0:8080` | HTTP listen address (web client, `/api`, `/gateway`, files, updates). |
-| `RELAY_DATA` | `data` | Data directory (`updates/` for desktop releases, local uploads). |
-| `RELAY_WEB` | `web/dist` | Built web client. |
-| `RELAY_APP_URL` | `http://localhost:8080` | Public app URL. |
-| `RELAY_SITE_URL` | `RELAY_APP_URL` | Public site URL for invite pages. |
-| `RELAY_METRICS_ADDR` | `127.0.0.1:9464` | Prometheus metrics listener (keep it private). |
-| `LIVEKIT_URL` | `http://livekit:7880` | LiveKit server API URL. |
-| `LIVEKIT_PUBLIC_URL` | empty | LiveKit URL for clients. Empty — clients use `/rtc` on the app origin. |
-| `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` | — | LiveKit credentials (tokens and webhook verification). Without them (or with a secret shorter than 32 characters) voice is disabled. |
-| `RELAY_STORAGE` | `local` | `local` (files in `RELAY_DATA/uploads`) or `s3`. |
-| `RELAY_S3_ENDPOINT`, `RELAY_S3_BUCKET` | — | S3 endpoint and bucket (`s3` storage). |
-| `RELAY_S3_REGION` | `garage` | S3 region. |
-| `RELAY_S3_ACCESS_KEY`, `RELAY_S3_SECRET_KEY` | — | S3 credentials. |
-| `RELAY_STORAGE_FALLBACK_DIR` | empty | Read-only local directory checked for files missing in S3 (after migrating from local storage). |
-| `RELAY_INSTANCE_ADMINS` | empty | Instance admins (usernames, comma-separated). When set, `users.is_admin` is synced to exactly this list on start; when unset, nothing changes. |
-| `RELAY_INVITE_KEY` | derived | HMAC key for invite codes of approved requests. If unset, derived from `LIVEKIT_API_SECRET`; if both are unset, random per process (approved links do not survive a restart). |
-| `RELAY_REGISTER_PER_IP` | `10` | Registration attempts per IP per 10 minutes. |
-| `RELAY_REGISTER_GLOBAL` | `100` | Registration attempts in total per 10 minutes. |
-| `RELAY_BAD_CODES_PER_IP` | `5` | Invalid invite codes per IP per 10 minutes before a pause. |
-| `RELAY_LOGIN_FAILS_PER_IP` | `20` | Failed logins per IP per 10 minutes before a pause. |
-| `RELAY_INVITE_REQUESTS_PER_HOUR` | `10` | Invite requests a member can create per hour. |
-| `RELAY_PRESENCE_GRACE_MS` | `15000` | Delay before a disconnected user is shown offline. |
-| `RELAY_ANIMATED_PROFILES` | `true` | Animated avatars and banners (`0`/`false` — keep the first frame). |
-| `RELAY_PREVIEW_ALLOW` | empty | Comma-separated host names allowed for link previews even if they resolve to private addresses. |
-| `RELAY_GEOIP_DB` | empty | City `.mmdb` database for the session log. |
-| `RELAY_REGIONS_FILE` | empty | Optional multi-node configuration (JSON). Single-node setups do not need it. |
+| `DATABASE_URL` | `postgres://relay:relay@127.0.0.1:55432/relay` | Подключение к PostgreSQL; миграции применяются при запуске. |
+| `RELAY_ADDR` | `0.0.0.0:8080` | Адрес HTTP (веб-клиент, `/api`, `/gateway`, файлы, обновления). |
+| `RELAY_DATA` | `data` | Каталог данных (`updates/` — обновления приложения, локальные файлы). |
+| `RELAY_WEB` | `web/dist` | Собранный веб-клиент. |
+| `RELAY_APP_URL` | `http://localhost:8080` | Публичный адрес приложения. |
+| `RELAY_SITE_URL` | `RELAY_APP_URL` | Публичный адрес страниц приглашений. |
+| `RELAY_METRICS_ADDR` | `127.0.0.1:9464` | Метрики Prometheus (держите закрытыми). |
+| `LIVEKIT_URL` | `http://livekit:7880` | API сервера LiveKit. |
+| `LIVEKIT_PUBLIC_URL` | пусто | Адрес LiveKit для клиентов; пусто — `/rtc` на адресе приложения. |
+| `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` | — | Ключи LiveKit (токены и проверка вебхуков). Без них (или с секретом короче 32 символов) голос выключен. |
+| `RELAY_STORAGE` | `local` | `local` (файлы в `RELAY_DATA/uploads`) или `s3`. |
+| `RELAY_S3_ENDPOINT`, `RELAY_S3_BUCKET` | — | Адрес S3 и бакет (хранилище `s3`). |
+| `RELAY_S3_REGION` | `garage` | Регион S3. |
+| `RELAY_S3_ACCESS_KEY`, `RELAY_S3_SECRET_KEY` | — | Ключи S3. |
+| `RELAY_STORAGE_FALLBACK_DIR` | пусто | Локальный каталог только для чтения: файлы, которых ещё нет в S3 (после переезда с локального хранения). |
+| `RELAY_REGISTRATION` | `open` | `open` или `invite` (регистрация только по приглашениям). |
+| `RELAY_INSTANCE_ADMINS` | пусто | Администраторы инстанса (логины через запятую). Если задана — при запуске флаг администратора выставляется ровно по списку; не задана — ничего не меняется. |
+| `RELAY_INVITE_KEY` | производный | Ключ HMAC для кодов по одобренным запросам. Не задан — выводится из `LIVEKIT_API_SECRET`; нет и его — случайный на время работы процесса. |
+| `RELAY_REGISTER_PER_IP` | `10` | Попыток регистрации с одного IP за 10 минут. |
+| `RELAY_REGISTER_GLOBAL` | `100` | Попыток регистрации всего за 10 минут. |
+| `RELAY_BAD_CODES_PER_IP` | `5` | Неверных кодов приглашения с одного IP за 10 минут до паузы. |
+| `RELAY_LOGIN_FAILS_PER_IP` | `20` | Неудачных входов с одного IP за 10 минут до паузы. |
+| `RELAY_INVITE_REQUESTS_PER_HOUR` | `10` | Запросов на приглашение от участника в час. |
+| `RELAY_PRESENCE_GRACE_MS` | `15000` | Через сколько отключившийся пользователь показывается «не в сети». |
+| `RELAY_ANIMATED_PROFILES` | `true` | Анимированные аватары и баннеры (`0`/`false` — только первый кадр). |
+| `RELAY_PREVIEW_ALLOW` | пусто | Имена хостов через запятую, для которых превью ссылок разрешено, даже если они указывают на внутренние адреса. |
+| `RELAY_GEOIP_DB` | пусто | База городов `.mmdb` для журнала сеансов. |
+| `RELAY_REGIONS_FILE` | пусто | Необязательная конфигурация нескольких узлов (JSON); одному серверу не нужна. |
 
-The client IP is taken from the first `X-Forwarded-For` value (set by the reverse proxy), so run the server behind a
-proxy that overwrites this header (Caddy and the nginx example in [deployment.md](deployment.md) do).
+IP клиента берётся из первого значения `X-Forwarded-For` (его ставит обратный прокси), поэтому сервер должен работать
+за прокси, который перезаписывает этот заголовок (Caddy и пример nginx в [deployment.md](deployment.md) так и делают).
 
-## Desktop client (build time)
+## Приложение для Windows (при сборке)
 
-Set when building `desktop/` (see [desktop-client.md](desktop-client.md)); the values are compiled into the app.
+Задаются при сборке `desktop/` ([desktop-client.md](desktop-client.md)) и вшиваются в приложение.
 
-| Variable | Default | Description |
+| Переменная | По умолчанию | Что задаёт |
 |---|---|---|
-| `RELAY_SERVER` | empty | Server the app connects to. Empty — the app asks for the address on first start. |
-| `RELAY_ENDPOINTS` | empty | Several entry points: `id=https://host[#pin][#fallback],…`. Empty — one entry point `RELAY_SERVER`. |
-| `RELAY_PINS` | empty | SHA-256 SPKI pins (base64) for entry points marked `#pin` (servers with self-signed certificates). |
-| `RELAY_UPDATE_KEY` | empty | Ed25519 public key (base64) for verifying updates. Empty — auto-update is disabled. |
-| `RELAY_UPDATE_CHANNEL` | empty | Update channel (`test` — `/updates/test/`). |
+| `RELAY_SERVER` | пусто | Сервер, к которому подключается приложение. Пусто — приложение спросит адрес при первом запуске. |
+| `RELAY_ENDPOINTS` | пусто | Несколько точек входа: `id=https://host[#pin][#fallback],…`. Пусто — одна точка `RELAY_SERVER`. |
+| `RELAY_PINS` | пусто | SPKI-пины (SHA-256, base64) для точек входа с `#pin` (серверы с самоподписанным сертификатом). |
+| `RELAY_UPDATE_KEY` | пусто | Открытый ключ Ed25519 (base64) для проверки обновлений. Пусто — автообновление выключено. |
+| `RELAY_UPDATE_CHANNEL` | пусто | Канал обновлений (`test` — `/updates/test/`). |
 
-Runtime switches for development and tests: `RELAY_DESKTOP_PROFILE` (separate profile and settings),
-`RELAY_DESKTOP_DEBUG`, `RELAY_DESKTOP_CDP` (remote debugging port), `RELAY_DESKTOP_TEST_*` (test hooks).
+Для разработки и тестов: `RELAY_DESKTOP_PROFILE` (отдельный профиль и настройки), `RELAY_DESKTOP_DEBUG`,
+`RELAY_DESKTOP_CDP` (порт удалённой отладки), `RELAY_DESKTOP_TEST_*` (тестовые хуки).

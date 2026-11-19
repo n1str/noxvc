@@ -17,7 +17,7 @@ export interface Me extends User { bio?: string; pronouns?: string; banner_color
   /** Настройки аккаунта, общие для устройств (горячие клавиши, голос, тема). */
   settings?: Record<string, unknown>;
   /** Администратор инстанса (backlog обратной связи); непрочитанные изменения в моих обращениях. */
-  is_admin?: boolean; feedback_unread?: number; invite_pending?: number; privacy?: { friend_requests: 'everyone' | 'mutual' | 'none'; dm_from: 'everyone' | 'friends' } }
+  is_admin?: boolean; feedback_unread?: number; invite_pending?: number; invite_only?: boolean; privacy?: { friend_requests: 'everyone' | 'mutual' | 'none'; dm_from: 'everyone' | 'friends' } }
 /** Отношение: 1 друг, 2 заблокирован мной, 3 входящая заявка, 4 исходящая. */
 export interface Relationship { id: number; kind: 1 | 2 | 3 | 4; since: number; user: User }
 export interface Member extends User { nick: string | null; roles: number[] }

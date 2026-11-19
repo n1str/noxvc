@@ -1,67 +1,69 @@
-# Architecture
+# Архитектура
+
+English: [en/architecture.md](en/architecture.md)
 
 ```
- Web client (React)            Windows app (Tauri 2)
-   browser                      WebView2 with the same web client
-        │                       + Rust: hotkeys, native capture, updates
+ Веб-клиент (React)           Приложение для Windows (Tauri 2)
+   браузер                      WebView2 с тем же веб-клиентом
+        │                       + Rust: горячие клавиши, захват экрана, обновления
         │                                   │
         ├─── HTTPS: /, /api, /gateway (WS) ─┤
         ▼                                   ▼
-   Caddy (TLS, optional) ───────────► NoxVC server (Rust: axum + tokio)
+   Caddy (TLS, по желанию) ─────────► сервер NoxVC (Rust: axum + tokio)
                                          │  │  │
-                     PostgreSQL ◄────────┘  │  └──► Garage / any S3 (files)
-                                            │ tokens, room API      ▲ webhooks
+                     PostgreSQL ◄────────┘  │  └──► Garage / любой S3 (файлы)
+                                            │ токены, API комнат    ▲ вебхуки
                                             ▼                       │
-   clients ══ WebRTC media (UDP 7882, TCP 7881, TURN 3478) ══► LiveKit SFU
+   клиенты ══ медиа WebRTC (UDP 7882, TCP 7881, TURN 3478) ══► LiveKit SFU
 ```
 
-## Server (`src/`)
+## Сервер (`src/`)
 
-| Module | Responsibility |
+| Модуль | За что отвечает |
 |---|---|
-| `main.rs` | Startup, routes, static files (web client, desktop updates), CLI (`relay admin …`) |
-| `api.rs` | REST: auth, servers, channels, messages, roles, invites, uploads, voice tokens |
-| `perms.rs` | Permission computation (bitmask, overwrites, hierarchy) — the single source of truth |
-| `gateway.rs`, `ws.rs` | WebSocket gateway: HELLO/IDENTIFY/RESUME, heartbeats, dispatch, presence hub |
-| `db.rs` | Pool, migrations, shared queries and JSON shapes |
-| `threads.rs` | Threads, forums, polls |
-| `search.rs` | Full-text search (PostgreSQL `tsvector`) |
-| `social.rs` | Profiles, friends, DMs, presence, account settings |
-| `media.rs`, `mediaq.rs` | Media probing, background processing of avatars/banners/icons (ffmpeg) |
-| `storage.rs` | Local or S3 storage, serving uploads |
-| `embeds.rs` | Link previews with SSRF protection (no redirects, private ranges blocked, pinned resolution) |
-| `emojis.rs` | Custom emoji |
-| `mentions.rs` | Mentions and notification targets |
-| `activity.rs` | Game activity ("Playing …") from the desktop app |
-| `livekit.rs` | LiveKit tokens, room API, webhook verification |
-| `invites.rs` | Invite-only registration: codes, member requests, admin API, rate limits, CLI |
-| `feedback.rs` | Bug reports / ideas backlog for instance admins |
-| `sessions.rs` | Sessions, security log, client and GeoIP info |
-| `metrics.rs` | Prometheus metrics (`relay_*`) |
-| `regions.rs` | Optional multi-node entry points (off on a single server) |
-| `site.rs` | Public invite page with OpenGraph preview, `/download/windows` |
+| `main.rs` | Запуск, маршруты, раздача веб-клиента и обновлений приложения, CLI (`relay admin …`) |
+| `api.rs` | REST: вход, серверы, каналы, сообщения, роли, приглашения на серверы, загрузки, токены голоса |
+| `perms.rs` | Расчёт прав (битовая маска, переопределения, иерархия) — единственный источник прав |
+| `gateway.rs`, `ws.rs` | WebSocket gateway: HELLO/IDENTIFY/RESUME, heartbeat, рассылка событий, присутствие |
+| `db.rs` | Пул, миграции, общие запросы и JSON |
+| `threads.rs` | Ветки, форумы, опросы |
+| `search.rs` | Полнотекстовый поиск (PostgreSQL `tsvector`) |
+| `social.rs` | Профили, друзья, личные сообщения, присутствие, настройки аккаунта |
+| `media.rs`, `mediaq.rs` | Разбор медиа, фоновая обработка аватаров/баннеров/иконок (ffmpeg), очистка EXIF |
+| `storage.rs` | Локальное хранилище или S3, отдача файлов |
+| `embeds.rs` | Превью ссылок с защитой от SSRF (без редиректов, внутренние адреса закрыты, проверенный адрес) |
+| `emojis.rs` | Свои эмодзи |
+| `mentions.rs` | Упоминания и адресаты уведомлений |
+| `activity.rs` | Игровая активность («Играет в …») из приложения |
+| `livekit.rs` | Токены LiveKit, API комнат, проверка вебхуков |
+| `invites.rs` | Режим регистрации, коды приглашений и запросы (режим `invite`), ограничения частоты, CLI |
+| `feedback.rs` | Обращения (баги и предложения) для администраторов |
+| `sessions.rs` | Сеансы, журнал безопасности, данные клиента и GeoIP |
+| `metrics.rs` | Метрики Prometheus (`relay_*`) |
+| `regions.rs` | Необязательные дополнительные точки входа (на одном сервере выключено) |
+| `site.rs` | Публичная страница приглашения с превью OpenGraph, `/download/windows` |
 
-Database schema: [`migrations/`](../migrations) (applied on start).
+Схема базы — [`migrations/`](../migrations) (применяются при запуске).
 
-## Web client (`web/`)
+## Веб-клиент (`web/`)
 
-React 19 + TypeScript + Vite, state in `zustand` (`src/store.ts`), gateway client in `src/lib/gateway.ts`, voice in
-`src/features/voice.tsx` (livekit-client), design tokens in `src/styles/tokens.css`, translations in `src/i18n*.ts`.
-The server serves the built bundle; the desktop app loads it from the server.
+React 19 + TypeScript + Vite, состояние — `zustand` (`src/store.ts`), клиент gateway — `src/lib/gateway.ts`, голос —
+`src/features/voice.tsx` (livekit-client), дизайн-токены — `src/styles/tokens.css`, переводы — `src/i18n*.ts`.
+Собранный бандл раздаёт сервер; приложение для Windows загружает его с сервера.
 
-## Desktop app (`desktop/`)
+## Приложение для Windows (`desktop/`)
 
-`desktop/setup/` is the local start screen (connects to the server, shows connection errors). Native code in
-`desktop/src-tauri/src/`: `hook.rs`/`hotkeys.rs` (Raw Input hotkeys, push-to-talk), `share.rs`/`gpu.rs`/`mfenc.rs`
-(Windows Graphics Capture → H.264 → LiveKit Rust SDK), `games.rs` (game detection, Dota 2 GSI on 127.0.0.1),
-`update.rs` (signed updates), `endpoint.rs`/`pin.rs` (entry points, certificate pinning), `snap.rs` (window
-snapping).
+`desktop/setup/` — локальный экран подключения (подключение к серверу, ввод адреса, ошибки связи). Нативный код —
+`desktop/src-tauri/src/`: `hook.rs`/`hotkeys.rs` (горячие клавиши Raw Input, рация), `share.rs`/`gpu.rs`/`mfenc.rs`
+(Windows Graphics Capture → H.264 → LiveKit Rust SDK), `games.rs` (определение игр, Dota 2 GSI на 127.0.0.1),
+`update.rs` (подписанные обновления), `endpoint.rs`/`pin.rs` (точки входа, закрепление сертификата), `snap.rs`
+(прилипание окна).
 
-## Tests
+## Тесты
 
-- `tests/*.mjs` — API and gateway tests against `tests/stack` (Docker).
-- `web/e2e/*.mjs` — browser tests (Playwright + Chrome).
-- `cargo test` — unit tests (server and desktop).
-- `tests/demo` — demo instance with made-up data for screenshots.
+- `tests/*.mjs` — тесты API и gateway на стенде `tests/stack` (Docker).
+- `web/e2e/*.mjs` — браузерные тесты (Playwright + Chrome).
+- `cargo test` — модульные тесты сервера и приложения.
+- `tests/demo` — демо-стенд с выдуманными данными для скриншотов.
 
-Decisions behind this design: [decisions/](decisions/).
+Почему так устроено: [decisions/](decisions/).

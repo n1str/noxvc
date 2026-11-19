@@ -30,6 +30,7 @@ const ru = {
     smartscreen: 'Если Windows покажет «Система Windows защитила ваш компьютер» — нажмите «Подробнее» → «Выполнить в любом случае»: установщик пока не подписан сертификатом издателя.' },
   auth: {
     welcome: 'С возвращением!', welcomeSub: 'Рады видеть вас снова', create: 'Создать учётную запись', createSub: 'Регистрация — только по коду приглашения',
+    createSubOpen: 'Пара секунд — и вы внутри', toRegisterOpen: 'Зарегистрироваться',
     code: 'Код приглашения', haveCode: 'Есть код приглашения?', closed: 'NoxVC — закрытый сервис', closedSub: 'Регистрация только по приглашению. Уже есть аккаунт — войдите, и приглашение откроется.',
     username: 'Имя пользователя', password: 'Пароль', login: 'Войти', register: 'Продолжить',
     needAccount: 'Нужна учётная запись?', haveAccount: 'Уже есть учётная запись?', toRegister: 'Зарегистрироваться по коду', toLogin: 'Войти',
@@ -95,7 +96,7 @@ const ru = {
     acMembers: 'Участники', acChannels: 'Каналы', acEmoji: 'Эмодзи', role: 'роль', everyone: 'уведомить всех в канале', here: 'уведомить всех в сети',
     tooManyFiles: 'Не больше {{n}} файлов за раз', waitUpload: 'Дождитесь окончания загрузки файлов', removeFile: 'Убрать файл',
   },
-  regions: { 'ru-1': 'Россия', 'ru-1-ip': 'Россия, прежний адрес', 'eu-nl-1': 'Нидерланды' },
+  regions: { main: 'Основной сервер', 'main-ip': 'Основной сервер, по IP' },
   fb: {
     title: 'Сообщить о проблеме или предложить идею', kind: 'Тип', category: 'Категория', titleField: 'Заголовок', body: 'Описание', status: 'Статус', prio: 'Приоритет', sort: 'Сортировка',
     k: { bug: 'Ошибка', idea: 'Предложение', other: 'Другое' },
@@ -180,6 +181,7 @@ const en: Dict = {
     smartscreen: 'If Windows shows “Windows protected your PC”, click “More info” → “Run anyway”: the installer is not signed with a publisher certificate yet.' },
   auth: {
     welcome: 'Welcome back!', welcomeSub: 'Great to see you again', create: 'Create an account', createSub: 'Registration is by invite code only',
+    createSubOpen: 'A few seconds and you are in', toRegisterOpen: 'Register',
     code: 'Invite code', haveCode: 'Have an invite code?', closed: 'NoxVC is invite-only', closedSub: 'Registration is by invitation only. Already have an account? Log in and the invite will open.',
     username: 'Username', password: 'Password', login: 'Log in', register: 'Continue',
     needAccount: 'Need an account?', haveAccount: 'Already have an account?', toRegister: 'Register with a code', toLogin: 'Log in',
@@ -239,7 +241,7 @@ const en: Dict = {
     acMembers: 'Members', acChannels: 'Channels', acEmoji: 'Emoji', role: 'role', everyone: 'notify everyone in the channel', here: 'notify everyone online',
     tooManyFiles: 'No more than {{n}} files at once', waitUpload: 'Wait for the uploads to finish', removeFile: 'Remove file',
   },
-  regions: { 'ru-1': 'Russia', 'ru-1-ip': 'Russia, previous address', 'eu-nl-1': 'Netherlands' },
+  regions: { main: 'Main server', 'main-ip': 'Main server, by IP' },
   fb: {
     title: 'Report a problem or suggest an idea', kind: 'Type', category: 'Category', titleField: 'Title', body: 'Description', status: 'Status', prio: 'Priority', sort: 'Sort',
     k: { bug: 'Bug', idea: 'Suggestion', other: 'Other' },

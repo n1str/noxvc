@@ -42,7 +42,7 @@ jobs:
           sha256sum "$f" > "$f.sha256"
           cd "$GITHUB_WORKSPACE"
           v="${GITHUB_REF_NAME#v}"
-          awk -v v="$v" '$0 ~ "^## \[?"v"\]?" {on=1; next} on && /^## / {exit} on' CHANGELOG.md > notes.md
+          awk -v v="$v" '/^## /{on = index($0, "[" v "]") > 0} on' CHANGELOG.md > notes.md
           { echo; echo "**SHA-256:** \`$(cut -d' ' -f1 desktop/src-tauri/target/release/bundle/nsis/*.sha256)\`"; } >> notes.md
       - uses: softprops/action-gh-release@v2
         with:

@@ -16,6 +16,7 @@ services:
       RELAY_METRICS_ADDR: 0.0.0.0:9464
       # закрытая регистрация: тесты получают коды через CLI (tests/register-codes.mjs); ограничения частоты — для стенда
       RELAY_INSTANCE_ADMINS: tadmin
+      RELAY_REGISTRATION: invite # тесты закрытой регистрации (tests/invites.mjs)
       RELAY_REGISTER_PER_IP: "100000"
       RELAY_REGISTER_GLOBAL: "100000"
       RELAY_LOGIN_FAILS_PER_IP: "100000"

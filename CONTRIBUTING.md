@@ -1,4 +1,28 @@
-# Contributing
+# Участие в разработке
+
+Баги и предложения — в Issues; уязвимости — по [SECURITY.md](SECURITY.md).
+
+## Окружение
+
+- Сервер: Rust stable, Docker. `docker compose -f tests/stack/compose.yaml up -d --build` — сервер с PostgreSQL и
+  Garage на <http://127.0.0.1:18099> (без голоса). С голосом — `deploy/` ([docs/installation.md](docs/installation.md)).
+- Веб-клиент: Node.js 22, `cd web && npm ci && npm run dev`.
+- Приложение: Windows, см. [docs/desktop-client.md](docs/desktop-client.md).
+
+## Перед pull request
+
+```sh
+cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test
+(cd web && npm run build)
+RELAY_URL=http://127.0.0.1:18099 node --import=./tests/register-codes.mjs tests/invites.mjs
+```
+
+Небольшие PR, тесты на изменение поведения, описание того, как проверяли. Отправляя изменения, вы соглашаетесь на их
+распространение под AGPL-3.0.
+
+---
+
+# English: Contributing
 
 Thanks for helping! Bug reports and feature requests: GitHub Issues. Security issues: see [SECURITY.md](SECURITY.md).
 

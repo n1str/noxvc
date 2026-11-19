@@ -451,7 +451,7 @@ export function UserSettingsModal({ close, tab: initial = 'account' }: { close()
     <div className="settings">
       <nav className="settings-nav">
         <div className="settings-title">{t('us.title')}</div>
-        {[...TABS, 'invites' as const, 'feedback' as const, ...(me.is_admin ? ['admin' as const, 'invadmin' as const] : [])].map((k) => (
+        {[...TABS, ...(me.invite_only ? ['invites' as const] : []), 'feedback' as const, ...(me.is_admin ? ['admin' as const] : []), ...(me.is_admin && me.invite_only ? ['invadmin' as const] : [])].map((k) => (
           <button key={k} className={`settings-tab ${tab === k ? 'on' : ''}`} onClick={() => setTab(k)}>
             {tab === k && <motion.span layoutId="user-settings-tab" className="settings-tab-bg" transition={spring} />}
             <span>{t(`us.${k}`)}</span>{k === 'feedback' && !!me.feedback_unread && <span className="tab-dot" aria-label={t('fb.unread')} />}{k === 'invadmin' && !!me.invite_pending && <span className="tab-count" aria-label={t('inv.pendingBadge', { n: me.invite_pending })}>{me.invite_pending}</span>}

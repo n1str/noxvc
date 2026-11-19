@@ -1,65 +1,65 @@
-# Administration
+# Администрирование
 
-## Instance administrators
+English: [en/administration.md](en/administration.md)
 
-Instance administrators are listed in `INSTANCE_ADMINS` (`deploy/.env`, usernames, comma-separated). On every start
-the server sets the admin flag for exactly these accounts; there is no way to grant it through the UI or the API.
-Server owners and roles inside a server are separate — they are managed in the server settings.
+## Администраторы инстанса
 
-To change admins: edit `.env` and restart the server (`docker compose up -d relay`).
+Администраторы перечислены в `INSTANCE_ADMINS` (`deploy/.env`, логины через запятую). При каждом запуске сервер
+выставляет флаг администратора ровно этим аккаунтам; через интерфейс или API назначить администратора нельзя.
+Владельцы и роли внутри серверов — отдельная вещь, они настраиваются в настройках сервера.
 
-## First administrator
+Сменить администраторов: отредактируйте `.env` и перезапустите сервер (`docker compose up -d relay`).
 
-1. Put your username into `INSTANCE_ADMINS`.
-2. Create an invite code on the server:
-   ```sh
-   cd deploy && ./noxvc-admin invite create --note "first admin"
-   ```
-3. Open the printed link and register with that username.
+## Первый администратор
 
-## Invite codes
+`install.sh` создаёт аккаунт администратора сам. Вручную: впишите свой логин в `INSTANCE_ADMINS` и зарегистрируйтесь
+с ним сразу после первого запуска — при открытой регистрации имя может занять кто-то другой.
 
-NoxVC has no open registration: every account needs a single-use invite code.
+## Регистрация
 
-- **Create** — in the app: **Settings → Invites (admin) → Codes → Create code** (note, validity 1–90 days,
-  optionally a server the new user joins automatically). The code is shown once; only its hash is stored.
-  On the server: `./noxvc-admin invite create [--days N] [--note TEXT] [--guild ID] [--count N] [--quiet]`.
-- **List / revoke** — the **Codes** tab (state: active, used — by whom and when, expired, revoked) or
+По умолчанию регистрация открыта. `REGISTRATION=invite` в `deploy/.env` делает инстанс закрытым: для каждого аккаунта
+нужен одноразовый код приглашения — дальше описано, как с ними работать.
+
+## Коды приглашений (режим `invite`)
+
+- **Создать** — в приложении: **Настройки → Приглашения (админ) → Коды → Создать код** (заметка, срок 1–90 дней,
+  по желанию — сервер, на который новичок попадёт сразу). Код показывается один раз: хранится только его хеш.
+  На сервере: `./noxvc-admin invite create [--days N] [--note ТЕКСТ] [--guild ID] [--count N] [--quiet]` (в `deploy/`).
+- **Список и отзыв** — вкладка **Коды** (состояние: активен, использован — кем и когда, истёк, отозван) или
   `./noxvc-admin invite list [--all]`, `./noxvc-admin invite revoke ID`.
-- **Link format** — `https://<APP_URL>/register?code=<CODE>`; the code is filled in automatically.
-- Registration with a missing, invalid, used, expired or revoked code fails with the same message
-  ("invite code is invalid").
+- **Ссылка** — `https://<APP_URL>/register?code=<КОД>`: код подставляется в форму сам.
+- Без кода, с неверным, использованным, истёкшим или отозванным кодом регистрация не проходит — сообщение одно и то же.
 
-## Invite requests
+## Запросы на приглашение (режим `invite`)
 
-Members can ask for an invite for someone (**Settings → Invites**): who, a comment, and one of their servers where
-they have the **Create invite** permission. Up to 3 pending requests per member; a request that is not decided in
-14 days expires.
+Участники могут попросить приглашение для человека (**Настройки → Приглашения**): кого, комментарий и сервер, где у них
+есть право «Приглашать». Не больше 3 ожидающих запросов на участника; не решённый за 14 дней запрос истекает.
 
-The admin sees new requests in **Settings → Invites (admin) → Requests** (badge with the number of pending ones):
-- **Approve** (choose validity) — a code bound to the request and its server is created; the requester gets a
-  notification and sees the link with a **Copy link** button until it is used or expires.
-- **Reject** with an optional reason — the requester is notified.
+Администратор видит запросы в **Настройки → Приглашения (админ) → Запросы** (бейдж с числом ожидающих):
+- **Одобрить** (со сроком) — создаётся код, привязанный к запросу и серверу; автор получает уведомление и видит ссылку
+  с кнопкой «Скопировать», пока она не использована и не истекла;
+- **Отклонить** с причиной (необязательно) — автор получает уведомление.
 
-`./noxvc-admin requests list [--all]` lists them on the server. The **History** tab shows who invited whom, who
-approved it, and when the account was registered.
+`./noxvc-admin requests list [--all]` — список на сервере. Вкладка **История** — кто кого пригласил, кто одобрил и
+когда человек зарегистрировался.
 
-## Server invites
+## Приглашения на сервер
 
-Invite links to a server (`/invite/<code>` or `#invite/<code>`) work for registered users as usual. A visitor without
-an account sees "NoxVC is invite-only" and a login form — no registration.
+Ссылки-приглашения на сервер (`/invite/<код>` или `#invite/<код>`) работают как обычно. В режиме `invite` гость без
+аккаунта видит «закрытый сервис» и форму входа, без регистрации.
 
-## Backlog (bug reports and ideas)
+## Обращения (баги и предложения)
 
-Users send bug reports, ideas and questions from the app (feedback button). Admins manage them in
-**Settings → Reports (admin)**: filters, status, priority, duplicates, replies, CSV/Markdown export.
+Пользователи отправляют баг-репорты, предложения и вопросы из приложения (кнопка обратной связи). Администраторы ведут
+их в **Настройки → Обращения (админ)**: фильтры, статус, приоритет, дубликаты, ответы, выгрузка в CSV/Markdown.
 
-## Rate limits
+## Ограничения частоты
 
-Registration attempts, invalid codes, failed logins, invite requests and feedback are rate-limited per IP or per
-user (defaults and variables: [configuration.md](configuration.md)). Limits are kept in memory and reset on restart.
+Попытки регистрации, неверные коды, неудачные входы, запросы на приглашение и обращения ограничены по IP или по
+пользователю (значения и переменные — [configuration.md](configuration.md)). Счётчики в памяти и сбрасываются при
+перезапуске.
 
-## Sessions
+## Сеансы
 
-Every user sees their active sessions and a security log (logins, password changes, revoked sessions) in
-**Settings → My account** and can sign out other devices.
+Каждый пользователь видит свои активные сеансы и журнал безопасности (входы, смены пароля, завершённые сеансы) в
+**Настройки → Моя учётная запись** и может завершить сеансы на других устройствах.

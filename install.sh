@@ -9,6 +9,17 @@ cd "$(dirname "$0")/deploy"
 say() { printf '\n\033[1;35m==>\033[0m %s\n' "$*"; }
 ask() { local q=$1 def=${2:-} a; read -r -p "$q${def:+ [$def]}: " a; echo "${a:-$def}"; }
 
+[[ $EUID -eq 0 ]] || { echo "Запустите от root: sudo ./install.sh / Run as root: sudo ./install.sh"; exit 1; }
+
+# ---------- память для сборки (Rust + веб-клиент, нужно около 4 ГБ) ----------
+mem=$(awk '/MemTotal/ {print int($2/1024)}' /proc/meminfo); swp=$(awk '/SwapTotal/ {print int($2/1024)}' /proc/meminfo)
+if (( mem + swp < 3800 )) && [[ ! -e /swapfile ]]; then
+  say "Памяти ${mem} МБ — для сборки создаю swap 4 ГБ (/swapfile) / Creating a 4 GB swap file for the build"
+  fallocate -l 4G /swapfile 2>/dev/null || dd if=/dev/zero of=/swapfile bs=1M count=4096 status=none
+  chmod 600 /swapfile && mkswap /swapfile >/dev/null && swapon /swapfile
+  grep -q '^/swapfile ' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+fi
+
 # ---------- Docker ----------
 if ! command -v docker >/dev/null || ! docker compose version >/dev/null 2>&1; then
   say "Docker не найден / Docker not found"

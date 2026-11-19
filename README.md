@@ -21,7 +21,7 @@
 
 ## Быстрый старт
 
-**На сервере (VDS)** — Linux с публичным IP и двумя DNS-именами (например, `app.example.com` и `voice.example.com`):
+**На сервере (VDS)** — Linux с публичным IP; свой домен необязателен (без него будет адрес `<ip>.sslip.io` с HTTPS):
 
 ```sh
 git clone https://github.com/n1str/noxvc.git && cd noxvc && sudo ./install.sh

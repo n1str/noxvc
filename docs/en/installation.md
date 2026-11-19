@@ -11,7 +11,8 @@ git clone https://github.com/n1str/noxvc.git && cd noxvc && sudo ./install.sh
 
 [`install.sh`](../../install.sh) installs Docker if needed, asks for the app domain, the voice domain and the admin
 username, writes `deploy/.env` with random secrets, starts NoxVC with HTTPS and creates the admin account (prints the
-password). Before running it: two DNS A records to the server's IP and the ports below open.
+password). Before running it: open the ports below; a domain is optional — without one the script uses the free
+`<ip>.sslip.io` name (e.g. `203-0-113-10.sslip.io`), which resolves to the server and gets a normal HTTPS certificate.
 
 ## Local (one machine)
 

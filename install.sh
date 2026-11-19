@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # NoxVC — установка на сервер (VDS) одной командой / one-command server install.
 #   git clone https://github.com/n1str/noxvc.git && cd noxvc && sudo ./install.sh
-# Спрашивает домен и имя администратора, создаёт deploy/.env со случайными секретами, запускает всё в Docker
+# Спрашивает домен (нет домена — адрес <ip>.sslip.io) и имя администратора, создаёт deploy/.env со случайными секретами, запускает всё в Docker
 # (HTTPS через Caddy + Let's Encrypt) и сразу создаёт аккаунт администратора.
 set -euo pipefail
 cd "$(dirname "$0")/deploy"
@@ -24,13 +24,19 @@ if [[ -f .env ]]; then
   say "deploy/.env уже есть — используем его (удалите файл, чтобы настроить заново)"
 else
   say "Настройка / Setup"
-  echo "Нужны две DNS-записи типа A на IP этого сервера, например app.example.com и voice.example.com."
-  echo "You need two DNS A records pointing to this server, e.g. app.example.com and voice.example.com."
-  APP=$(ask "Адрес приложения / App domain" "")
-  [[ -n $APP ]] || { echo "Нужен домен / Domain is required"; exit 1; }
-  VOICE=$(ask "Адрес для голоса / Voice domain" "voice.${APP#*.}")
   IP=$(curl -fsS -m 5 https://api.ipify.org 2>/dev/null || true)
   IP=$(ask "Публичный IP сервера / Public IP" "$IP")
+  [[ $IP =~ ^[0-9]+.[0-9]+.[0-9]+.[0-9]+$ ]] || { echo "Нужен IPv4 / IPv4 is required"; exit 1; }
+  echo "Есть свой домен? Нужны две A-записи на $IP, например app.example.com и voice.example.com."
+  echo "Нет домена — нажмите Enter: будет адрес ${IP//./-}.sslip.io (бесплатно, HTTPS тоже будет)."
+  echo "Own domain? Two A records to $IP are needed. No domain — press Enter to use ${IP//./-}.sslip.io."
+  APP=$(ask "Адрес приложения / App domain" "")
+  if [[ -z $APP ]]; then
+    APP="${IP//./-}.sslip.io"; VOICE="voice.$APP"
+    echo "  приложение / app: $APP   голос / voice: $VOICE"
+  else
+    VOICE=$(ask "Адрес для голоса / Voice domain" "voice.${APP#*.}")
+  fi
   ADMIN=$(ask "Логин администратора / Admin username" "admin")
   ./gen-env.sh > .env
   sed -i -e "s|^INSTANCE_ADMINS=.*|INSTANCE_ADMINS=$ADMIN|" \

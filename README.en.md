@@ -21,7 +21,7 @@
 
 ## Quick start
 
-**On a server (VDS)** — Linux with a public IP and two DNS names (e.g. `app.example.com`, `voice.example.com`):
+**On a server (VDS)** — Linux with a public IP; your own domain is optional (without one you get `<ip>.sslip.io` with HTTPS):
 
 ```sh
 git clone https://github.com/n1str/noxvc.git && cd noxvc && sudo ./install.sh

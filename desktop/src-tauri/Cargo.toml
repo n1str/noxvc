@@ -30,7 +30,7 @@ base64 = "0.22"
 
 # Нативная демонстрация экрана (как в Discord): свой выбор окна/экрана, захват Windows Graphics Capture,
 # кодирование и публикация в LiveKit из приложения, звук — WASAPI loopback (без звука самого Relay).
-livekit = { version = "=0.9.7", features = ["rustls-tls-webpki-roots"] }
+livekit = { version = "=0.12.0", features = ["rustls-tls-webpki-roots"] }
 png = "=0.18.1"
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "io-util", "sync", "time"] }
 tokio-rustls = { version = "=0.26.6", default-features = false, features = ["ring", "tls12"] }

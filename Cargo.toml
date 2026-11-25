@@ -18,7 +18,7 @@ hmac = "0.12"
 sha2 = "0.10"
 base64 = "0.22"
 # HMAC-SHA1 для краткоживущих учётных данных TURN (coturn use-auth-secret); та же версия уже в дереве (axum ws)
-sha1 = "=0.10.7"
+sha1 = "=0.11.0"
 maxminddb = "=0.32.0" # местоположение сеанса по IP (база DB-IP Lite, CC BY 4.0)
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "stream"] }
 # уже в дереве (axum): ServeDir через oneshot для отдачи файлов с диска
